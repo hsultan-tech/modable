@@ -1,0 +1,68 @@
+{
+  "name": "modable",
+  "version": "1.0.0",
+  "description": "Agentic AI-powered feature builder for your applications",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "dev:electron": "vite --config vite.config.electron.ts",
+    "build": "vite build",
+    "build:electron": "vite build --config vite.config.electron.ts && electron-builder",
+    "preview": "vite preview",
+    "start": "node server.js",
+    "server": "node server.js",
+    "electron:dev": "vite --config vite.config.electron.ts",
+    "electron:build": "vite build --config vite.config.electron.ts && electron-builder"
+  },
+  "dependencies": {
+    "@electron/asar": "^4.0.1",
+    "@monaco-editor/react": "^4.6.0",
+    "clsx": "^2.1.0",
+    "diff": "^5.1.0",
+    "express": "^4.22.1",
+    "lucide-react": "^0.303.0",
+    "openai": "^4.24.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tailwind-merge": "^2.2.0",
+    "ws": "^8.18.3",
+    "zustand": "^4.4.7"
+  },
+  "devDependencies": {
+    "@types/diff": "^5.0.9",
+    "@types/node": "^20.10.6",
+    "@types/react": "^18.2.46",
+    "@types/react-dom": "^18.2.18",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.16",
+    "concurrently": "^8.2.2",
+    "electron": "^27.3.11",
+    "electron-builder": "^24.9.1",
+    "postcss": "^8.4.33",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.11",
+    "vite-plugin-electron": "^0.28.0",
+    "vite-plugin-electron-renderer": "^0.14.5"
+  },
+  "build": {
+    "appId": "com.modable.app",
+    "productName": "Modable",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}
