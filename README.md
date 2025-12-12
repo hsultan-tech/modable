@@ -1,5 +1,7 @@
 # Modable
 
+https://github.com/user-attachments/assets/294e376b-3d6a-441b-951c-2ffc6967b854
+
 An AI-powered agentic workforce for adding features to your applications. Modable uses GPT-4 to explore your codebase, understand your project structure, plan changes, and implement features autonomously.
 
 ## Features
