@@ -1,18 +1,24 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { History, ArrowLeft, CheckCircle, XCircle, Clock, Code, Trash2 } from 'lucide-react'
-import { Sidebar } from './Sidebar'
+import { DashboardSidebar } from './DashboardSidebar'
+import { ApiKeyChangeModal } from './ProfileMenu'
 import { useAppStore } from '../stores/projectStore'
-import { TextAnimate } from './TextAnimate'
 
-export function InjectionHistory() {
+interface InjectionHistoryProps {
+  onBack?: () => void
+}
+
+export function InjectionHistory({ onBack }: InjectionHistoryProps) {
   const { setApiKey, injectionHistory, deleteInjection } = useAppStore()
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false)
 
   const handleLogout = () => {
     setApiKey(null)
   }
 
   const handleHome = () => {
-    window.location.href = '/'
+    onBack?.()
   }
 
   const formatTime = (timestamp: number) => {
@@ -30,15 +36,18 @@ export function InjectionHistory() {
   }
 
   return (
-    <div className="h-full w-full frosty flex text-white overflow-hidden">
-      <Sidebar 
+    <div className="h-full w-full flex bg-[#0a0a0f] text-white overflow-hidden">
+      <DashboardSidebar 
         onLogout={handleLogout}
-        onHome={handleHome}
+        onRefresh={handleHome}
+        onHistory={() => {}}
+        onSettings={() => setShowApiKeyModal(true)}
+        activeView="history"
       />
 
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="px-8 py-6 border-b border-white/10">
+        <div className="px-8 py-6 border-b border-white/5">
           <div className="flex items-center gap-4 mb-4">
             <button 
               onClick={handleHome}
@@ -47,18 +56,11 @@ export function InjectionHistory() {
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center">
                 <History className="w-5 h-5" />
               </div>
               <div>
-                <TextAnimate 
-                  animation="blurInUp" 
-                  by="word"
-                  className="text-2xl font-medium"
-                  startOnView={false}
-                >
-                  Injection History
-                </TextAnimate>
+                <h1 className="text-2xl font-semibold text-white">Injection History</h1>
                 <p className="text-white/40 text-sm">View all your past code injections</p>
               </div>
             </div>
@@ -66,16 +68,16 @@ export function InjectionHistory() {
 
           {/* Stats */}
           <div className="flex gap-4">
-            <div className="px-4 py-2 rounded-lg bg-white/5 border border-white/10">
+            <div className="px-4 py-2 rounded-xl bg-[#0f1115] border border-white/10">
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-400" />
+                <CheckCircle className="w-4 h-4 text-emerald-400" />
                 <span className="text-sm">
                   <span className="font-medium text-white">{injectionHistory.filter(i => i.success).length}</span>
                   <span className="text-white/40 ml-1">successful</span>
                 </span>
               </div>
             </div>
-            <div className="px-4 py-2 rounded-lg bg-white/5 border border-white/10">
+            <div className="px-4 py-2 rounded-xl bg-[#0f1115] border border-white/10">
               <div className="flex items-center gap-2">
                 <XCircle className="w-4 h-4 text-red-400" />
                 <span className="text-sm">
@@ -95,16 +97,16 @@ export function InjectionHistory() {
                 key={injection.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="bg-neutral-900/50 border border-white/10 rounded-xl p-5 hover:border-white/20 transition-all"
+                transition={{ delay: index * 0.05 }}
+                className="bg-[#0f1115] border border-white/10 rounded-2xl p-5 hover:border-blue-500/30 transition-all"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-start gap-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                      injection.success ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                      injection.success ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-red-500/10 border border-red-500/20'
                     }`}>
                       {injection.success ? 
-                        <CheckCircle className="w-5 h-5 text-green-400" /> : 
+                        <CheckCircle className="w-5 h-5 text-emerald-400" /> : 
                         <XCircle className="w-5 h-5 text-red-400" />
                       }
                     </div>
@@ -123,7 +125,7 @@ export function InjectionHistory() {
                   </div>
                   <button 
                     onClick={() => deleteInjection(injection.id)}
-                    className="p-2 hover:bg-red-500/10 rounded transition-colors"
+                    className="p-2 hover:bg-red-500/10 rounded-xl transition-colors"
                   >
                     <Trash2 className="w-4 h-4 text-white/40 hover:text-red-400 transition-colors" />
                   </button>
@@ -135,7 +137,7 @@ export function InjectionHistory() {
                     <Code className="w-4 h-4" />
                     View code
                   </summary>
-                  <pre className="mt-3 p-4 bg-neutral-950 rounded-lg text-xs text-white/60 font-mono overflow-x-auto border border-white/10">
+                  <pre className="mt-3 p-4 bg-[#0a0a0f] rounded-xl text-xs text-white/60 font-mono overflow-x-auto border border-white/10">
                     {injection.code}
                   </pre>
                 </details>
@@ -152,6 +154,12 @@ export function InjectionHistory() {
           </div>
         </div>
       </main>
+
+      {/* API Key Change Modal */}
+      <ApiKeyChangeModal
+        isOpen={showApiKeyModal}
+        onClose={() => setShowApiKeyModal(false)}
+      />
     </div>
   )
 }

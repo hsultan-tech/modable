@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAppStore } from '../stores/projectStore'
 import { useModAgent } from '../agent/useModAgent'
 import { api } from '../api'
-import { Sidebar } from './Sidebar'
+import { DashboardSidebar } from './DashboardSidebar'
 import { CommandPalette, useCommandPalette, CommandAction } from './CommandPalette'
 import { Kbd, KbdKey } from './ui/kbd'
 import { ProfileMenu, ApiKeyChangeModal } from './ProfileMenu'
@@ -115,23 +115,21 @@ export function ModWorkspace({ onNavigateToHistory }: { onNavigateToHistory?: ()
   if (!selectedApp) return null
 
   return (
-    <div className="h-full w-full frosty flex text-white overflow-hidden">
+    <div className="h-full w-full flex bg-[#0a0a0f] text-white overflow-hidden">
       {/* Sidebar */}
-      <Sidebar 
-        onNavigate={(view) => {
-          if (view === 'home' || view === 'apps') {
-            setSelectedApp(null)
-          }
-        }}
+      <DashboardSidebar 
         onLogout={handleLogout}
-        onHome={handleHome}
+        onRefresh={handleHome}
         onHistory={onNavigateToHistory}
+        onOpenCommandPalette={commandPalette.open}
+        onSettings={() => setShowApiKeyModal(true)}
+        activeView="mods"
       />
 
       {/* Left Panel - App Info */}
-      <div className="w-80 bg-neutral-900/30 border-r border-white/10 flex flex-col">
+      <div className="w-80 bg-[#0f1115] border-r border-white/5 flex flex-col">
         {/* Header */}
-        <div className="p-6 border-b border-white/10">
+        <div className="p-6 border-b border-white/5">
           <button 
             onClick={() => setSelectedApp(null)} 
             className="flex items-center gap-2 text-white/40 hover:text-white text-sm mb-6 transition-colors no-drag"
@@ -141,7 +139,7 @@ export function ModWorkspace({ onNavigateToHistory }: { onNavigateToHistory?: ()
           </button>
           
           {/* App card */}
-          <div className="relative h-28 bg-neutral-950 rounded-xl overflow-hidden mb-4">
+          <div className="relative h-28 bg-[#0a0a0f] rounded-2xl overflow-hidden mb-4 border border-white/5">
             <div 
               className="absolute inset-0 opacity-20"
               style={{
@@ -155,7 +153,7 @@ export function ModWorkspace({ onNavigateToHistory }: { onNavigateToHistory?: ()
                   <img 
                     src={selectedApp.realIcon} 
                     alt={selectedApp.name}
-                    className="w-10 h-10 object-contain filter grayscale"
+                    className="w-10 h-10 object-contain"
                   />
                 ) : (
                   <span className="text-2xl">{selectedApp.icon}</span>
@@ -164,17 +162,17 @@ export function ModWorkspace({ onNavigateToHistory }: { onNavigateToHistory?: ()
             </div>
           </div>
           
-          <h2 className="text-lg font-medium text-white">{selectedApp.name}</h2>
+          <h2 className="text-lg font-semibold text-white">{selectedApp.name}</h2>
           <p className="text-white/40 text-sm">v{selectedApp.version}</p>
         </div>
 
         {/* Launch Section */}
-        <div className="p-4 border-b border-white/10 space-y-3">
+        <div className="p-4 border-b border-white/5 space-y-3">
           {!isAppLaunched ? (
             <button 
               onClick={handleLaunch} 
               disabled={isLaunching}
-              className="w-full py-3.5 rounded-lg bg-white text-black font-medium flex items-center justify-center gap-3 transition-all disabled:opacity-50 hover:bg-white/90 no-drag"
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white font-medium flex items-center justify-center gap-3 transition-all disabled:opacity-50 hover:from-blue-500 hover:to-blue-400 no-drag"
             >
               {isLaunching ? (
                 <>
@@ -190,7 +188,7 @@ export function ModWorkspace({ onNavigateToHistory }: { onNavigateToHistory?: ()
             </button>
           ) : (
             <div className="space-y-3">
-              <div className="py-3.5 rounded-lg bg-white/5 border border-white/10 text-white/80 font-medium flex items-center justify-center gap-3">
+              <div className="py-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium flex items-center justify-center gap-3">
                 <CheckCircle className="w-5 h-5" />
                 Ready for Injection
               </div>
@@ -198,7 +196,7 @@ export function ModWorkspace({ onNavigateToHistory }: { onNavigateToHistory?: ()
               <button 
                 onClick={handleLaunch}
                 disabled={isLaunching}
-                className="w-full py-3 rounded-lg bg-neutral-900/50 border border-white/10 text-white/50 hover:text-white hover:border-white/20 text-sm font-medium flex items-center justify-center gap-2 transition-all no-drag"
+                className="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-white/50 hover:text-white hover:border-white/20 text-sm font-medium flex items-center justify-center gap-2 transition-all no-drag"
               >
                 {isLaunching ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -214,15 +212,22 @@ export function ModWorkspace({ onNavigateToHistory }: { onNavigateToHistory?: ()
             <motion.div 
               initial={{ opacity: 0, y: -5 }}
               animate={{ opacity: 1, y: 0 }}
-              className="py-3 px-4 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs"
+              className="py-3 px-4 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs"
             >
               <div className="flex items-start gap-2 mb-2">
                 <XCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>{launchError}</span>
+                <div>
+                  <p className="font-medium mb-1">{launchError}</p>
+                  {launchError.includes('ECONNREFUSED') && (
+                    <p className="text-orange-300 text-xs mt-2">
+                      💡 <strong>Tip:</strong> If the app crashed on launch, click <strong>Ignore</strong> in the crash dialog, then click <strong>Check Connection Again</strong> below. The debugger might connect on the second try.
+                    </p>
+                  )}
+                </div>
               </div>
               <button
                 onClick={handleRefreshStatus}
-                className="w-full mt-2 py-1.5 px-3 rounded bg-white/10 hover:bg-white/20 transition-colors text-xs font-medium"
+                className="w-full mt-2 py-1.5 px-3 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-xs font-medium"
               >
                 Check Connection Again
               </button>
@@ -248,7 +253,7 @@ export function ModWorkspace({ onNavigateToHistory }: { onNavigateToHistory?: ()
             />
           </div>
 
-          <div className="mt-6 p-4 rounded-lg bg-neutral-900/50 border border-white/10">
+          <div className="mt-6 p-4 rounded-xl bg-[#0a0a0f] border border-white/5">
             <h4 className="text-white/80 text-sm font-medium mb-2">How it works</h4>
             <ol className="text-white/40 text-xs space-y-1.5">
               <li>1. Launch the app with Modable</li>
@@ -260,16 +265,16 @@ export function ModWorkspace({ onNavigateToHistory }: { onNavigateToHistory?: ()
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col bg-[#0a0a0f]">
         {/* Top Bar */}
-        <div className="px-6 py-4 border-b border-white/10 drag">
+        <div className="px-6 py-4 border-b border-white/5 drag">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center">
-                <MessageSquare className="w-5 h-5 text-black" />
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center">
+                <MessageSquare className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="font-medium text-white">AI Feature Builder</h3>
+                <h3 className="font-semibold text-white">AI Feature Builder</h3>
                 <p className="text-white/40 text-xs">Describe what you want to add</p>
               </div>
             </div>
@@ -298,24 +303,24 @@ export function ModWorkspace({ onNavigateToHistory }: { onNavigateToHistory?: ()
                 transition={{ delay: i * 0.05 }}
               >
                 {msg.role === 'system' ? (
-                  <div className="bg-neutral-900/50 rounded-xl p-5 border border-white/10 max-w-2xl">
+                  <div className="bg-[#0f1115] rounded-2xl p-5 border border-white/10 max-w-2xl">
                     <p className="text-white/60 text-sm leading-relaxed whitespace-pre-wrap">
                       {msg.content.replace(/\*\*/g, '')}
                     </p>
                   </div>
                 ) : msg.role === 'user' ? (
                   <div className="flex justify-end">
-                    <div className="bg-white rounded-xl rounded-br-sm px-5 py-4 max-w-md">
-                      <p className="text-black text-sm font-medium">{msg.content}</p>
+                    <div className="bg-gradient-to-r from-blue-600 to-blue-500 rounded-2xl rounded-br-sm px-5 py-4 max-w-md">
+                      <p className="text-white text-sm font-medium">{msg.content}</p>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-3 max-w-2xl">
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-neutral-900 border border-white/10 flex items-center justify-center shrink-0">
-                        <Bot className="w-5 h-5 text-white/60" />
+                      <div className="w-10 h-10 rounded-xl bg-[#0f1115] border border-white/10 flex items-center justify-center shrink-0">
+                        <Bot className="w-5 h-5 text-blue-400" />
                       </div>
-                      <div className="bg-neutral-900/50 rounded-xl rounded-tl-sm p-5 border border-white/10 flex-1">
+                      <div className="bg-[#0f1115] rounded-2xl rounded-tl-sm p-5 border border-white/10 flex-1">
                         <p className="text-white/60 text-sm leading-relaxed whitespace-pre-wrap">
                           {msg.content.replace(/\*\*/g, '')}
                         </p>
@@ -337,39 +342,39 @@ export function ModWorkspace({ onNavigateToHistory }: { onNavigateToHistory?: ()
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-4 bg-neutral-900/50 rounded-xl p-5 border border-white/20 max-w-2xl"
+              className="flex items-center gap-4 bg-[#0f1115] rounded-2xl p-5 border border-blue-500/20 max-w-2xl"
             >
-              <Zap className="w-5 h-5 text-white" />
+              <Zap className="w-5 h-5 text-blue-400" />
               <span className="text-white/80 text-sm">{currentAction.description}</span>
-              <Loader2 className="w-5 h-5 text-white animate-spin ml-auto" />
+              <Loader2 className="w-5 h-5 text-blue-400 animate-spin ml-auto" />
             </motion.div>
           )}
         </div>
 
         {/* Bottom Chat Input */}
-        <div className="px-6 py-4 border-t border-white/10">
+        <div className="px-6 py-4 border-t border-white/5">
           <form onSubmit={handleSubmit}>
             <div className="flex items-center gap-4">
-              <div className="flex-1 flex items-center gap-3 bg-neutral-900/50 px-4 py-3 rounded-lg border border-white/10">
+              <div className="flex-1 flex items-center gap-3 bg-[#0f1115] px-4 py-3 rounded-xl border border-white/10">
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder={isAppLaunched ? "Describe a feature to add..." : "Launch the app first..."}
                   disabled={isAgentWorking || !isAppLaunched}
-                  className="bg-transparent text-white placeholder-neutral-500 border-none outline-none flex-1 no-drag disabled:opacity-50"
+                  className="bg-transparent text-white placeholder-white/30 border-none outline-none flex-1 no-drag disabled:opacity-50"
                 />
-                <button type="button" className="text-neutral-400 hover:text-white no-drag transition-colors">
+                <button type="button" className="text-white/30 hover:text-white no-drag transition-colors">
                   <Plus size={16} />
                 </button>
-                <button type="button" className="text-neutral-400 hover:text-white no-drag transition-colors">
+                <button type="button" className="text-white/30 hover:text-white no-drag transition-colors">
                   <MessageCircle size={16} />
                 </button>
               </div>
               <button
                 type="submit"
                 disabled={!input.trim() || isAgentWorking || !isAppLaunched}
-                className="w-10 h-10 bg-white text-black rounded-lg flex items-center justify-center hover:bg-white/90 no-drag transition-colors disabled:opacity-50 disabled:bg-white/10 disabled:text-white/30"
+                className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl flex items-center justify-center hover:from-blue-500 hover:to-blue-400 no-drag transition-all disabled:opacity-30 disabled:from-white/10 disabled:to-white/10"
               >
                 {isAgentWorking ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUp size={16} />}
               </button>
@@ -396,10 +401,10 @@ export function ModWorkspace({ onNavigateToHistory }: { onNavigateToHistory?: ()
 
 function StatusItem({ label, status }: { label: string; status: 'pending' | 'success' | 'error' }) {
   return (
-    <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-neutral-900/50 border border-white/10">
+    <div className="flex items-center justify-between py-2 px-3 rounded-xl bg-[#0a0a0f] border border-white/5">
       <span className="text-white/60 text-sm">{label}</span>
       {status === 'success' ? (
-        <CheckCircle className="w-4 h-4 text-white" />
+        <CheckCircle className="w-4 h-4 text-emerald-400" />
       ) : status === 'error' ? (
         <XCircle className="w-4 h-4 text-red-400" />
       ) : (
@@ -474,7 +479,7 @@ function CodePreview({ mod, canInject }: {
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="ml-13 bg-neutral-900/50 rounded-xl p-5 border border-white/20"
+      className="ml-13 bg-[#0f1115] rounded-2xl p-5 border border-blue-500/20"
     >
       <div className="flex items-center justify-between mb-4">
         <div>
@@ -483,14 +488,14 @@ function CodePreview({ mod, canInject }: {
         </div>
         
         {injected ? (
-          <span className="text-white text-sm font-medium flex items-center gap-2">
+          <span className="text-emerald-400 text-sm font-medium flex items-center gap-2">
             <CheckCircle className="w-4 h-4" /> Injected!
           </span>
         ) : (
           <button 
             onClick={handleInject} 
             disabled={isInjecting || !canInject}
-            className="px-5 py-2.5 rounded-lg bg-white text-black text-sm font-medium flex items-center gap-2 transition-colors disabled:opacity-50 hover:bg-white/90 no-drag"
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-medium flex items-center gap-2 transition-all disabled:opacity-50 hover:from-blue-500 hover:to-blue-400 no-drag"
           >
             {isInjecting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -503,12 +508,12 @@ function CodePreview({ mod, canInject }: {
       </div>
       
       {error && (
-        <div className="mb-3 py-2 px-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+        <div className="mb-3 py-2 px-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
           {error}
         </div>
       )}
       
-      <pre className="bg-neutral-950 rounded-lg p-4 text-xs text-white/40 font-mono overflow-x-auto border border-white/10 max-h-32">
+      <pre className="bg-[#0a0a0f] rounded-xl p-4 text-xs text-white/40 font-mono overflow-x-auto border border-white/5 max-h-32">
         {mod.code.slice(0, 400)}{mod.code.length > 400 ? '...' : ''}
       </pre>
     </motion.div>

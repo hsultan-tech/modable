@@ -118,7 +118,7 @@ app.post('/api/launch', async (req, res) => {
     });
     child.unref();
     
-    // Wait for debugger (with shorter timeout since we respond quickly)
+    // Wait for debugger
     const ready = await waitForDebugger(15000);
     if (ready) {
       res.json({ success: true, message: `${appName} launched with Modable!` });

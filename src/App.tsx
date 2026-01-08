@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAppStore } from './stores/projectStore'
 import { ApiKeyModal } from './components/ApiKeyModal'
-import { AppSelector } from './components/AppSelector'
+import { Dashboard } from './components/Dashboard'
 import { ModWorkspace } from './components/ModWorkspace'
 import { InjectionHistory } from './components/InjectionHistory'
 
@@ -17,12 +17,12 @@ export default function App() {
 
   // If history view is requested, show it
   if (currentView === 'history') {
-    return <InjectionHistory />
+    return <InjectionHistory onBack={() => setCurrentView('apps')} />
   }
   
   // Normal flow
   if (!selectedApp) {
-    return <AppSelector onNavigateToHistory={() => setCurrentView('history')} />
+    return <Dashboard onNavigateToHistory={() => setCurrentView('history')} />
   }
 
   return <ModWorkspace onNavigateToHistory={() => setCurrentView('history')} />

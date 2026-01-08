@@ -25,7 +25,7 @@ export function ApiKeyModal() {
   }
 
   return (
-    <div className="h-full w-full frosty flex items-center justify-center p-8">
+    <div className="h-full w-full bg-[#0a0a0f] flex items-center justify-center p-8">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -38,9 +38,9 @@ export function ApiKeyModal() {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.3 }}
-            className="w-12 h-12 rounded-xl bg-white flex items-center justify-center"
+            className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center"
           >
-            <Zap className="w-6 h-6 text-black" />
+            <Zap className="w-6 h-6 text-white" />
           </motion.div>
           <div>
             <h1 className="text-2xl font-semibold text-white">Modable</h1>
@@ -49,7 +49,7 @@ export function ApiKeyModal() {
         </div>
 
         {/* Main Card */}
-        <div className="bg-neutral-900/50 border border-white/10 rounded-xl p-6">
+        <div className="bg-[#0f1115] border border-white/10 rounded-2xl p-6">
           <div className="mb-6">
             <TextAnimate 
               animation="blurInUp" 
@@ -76,7 +76,7 @@ export function ApiKeyModal() {
                   value={key}
                   onChange={(e) => { setKey(e.target.value); setError(null) }}
                   placeholder="sk-proj-..."
-                  className={`w-full py-3 pl-10 pr-10 rounded-lg bg-neutral-800/50 border text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-colors ${
+                  className={`w-full py-3 pl-10 pr-10 rounded-xl bg-[#0a0a0f] border text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 transition-colors ${
                     error ? 'border-red-500/50' : 'border-white/10'
                   }`}
                 />
@@ -102,7 +102,7 @@ export function ApiKeyModal() {
 
             <button 
               type="submit" 
-              className="w-full py-3 rounded-lg bg-white text-black font-medium flex items-center justify-center gap-2 hover:bg-white/90 transition-colors"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white font-medium flex items-center justify-center gap-2 hover:from-blue-500 hover:to-blue-400 transition-all"
             >
               Get Started
               <ArrowRight className="w-5 h-5" />
@@ -122,7 +122,7 @@ export function ApiKeyModal() {
               href="https://platform.openai.com/api-keys" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-white/70 hover:text-white transition-colors underline underline-offset-2"
+              className="text-blue-400 hover:text-blue-300 transition-colors"
             >
               Get one from OpenAI →
             </a>
