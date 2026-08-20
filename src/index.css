@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+/* Archivo carries a width axis — expanded headers are the typographic signature.
+   Martian Mono carries every number, label and timestamp. */
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&family=Martian+Mono:wght@300..700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,189 +8,941 @@
 
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 262 83% 58%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 262 83% 58%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 50.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 262 83% 58%;
-    --radius: 0.75rem;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 262 83% 58%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 262 83% 58%;
+    --background: 30 6% 4%;
+    --foreground: 36 18% 91%;
+    --card: 30 6% 7%;
+    --card-foreground: 36 18% 91%;
+    --popover: 30 6% 7%;
+    --popover-foreground: 36 18% 91%;
+    --primary: 33 100% 66%;
+    --primary-foreground: 30 8% 6%;
+    --secondary: 30 6% 12%;
+    --secondary-foreground: 36 18% 91%;
+    --muted: 30 6% 12%;
+    --muted-foreground: 33 6% 56%;
+    --accent: 205 66% 66%;
+    --accent-foreground: 30 8% 6%;
+    --destructive: 350 65% 55%;
+    --destructive-foreground: 36 18% 96%;
+    --border: 30 6% 16%;
+    --input: 30 6% 16%;
+    --ring: 205 66% 66%;
+    --radius: 0.5rem;
+    --sidebar-background: 30 6% 4%;
+    --sidebar-foreground: 36 18% 91%;
+    --sidebar-primary: 33 100% 66%;
+    --sidebar-primary-foreground: 30 8% 6%;
+    --sidebar-accent: 30 6% 12%;
+    --sidebar-accent-foreground: 36 18% 91%;
+    --sidebar-border: 30 6% 16%;
+    --sidebar-ring: 205 66% 66%;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Archivo', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 }
 
 html, body, #root {
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-  margin: 0;
-  padding: 0;
+  height: 100%; width: 100%; overflow: hidden; margin: 0; padding: 0;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { 
-  background: hsl(var(--muted)); 
-  border-radius: 4px; 
-}
-::-webkit-scrollbar-thumb:hover { 
-  background: hsl(var(--muted-foreground) / 0.3); 
-}
-
-/* Electron titlebar */
 .titlebar-drag { -webkit-app-region: drag; }
-.titlebar-no-drag { -webkit-app-region: no-drag; }
+.titlebar-no-drag, .no-drag { -webkit-app-region: no-drag; }
 
-/* ============================================
-   GRADIENT MESH BACKGROUND
-   ============================================ */
+/* ============================================================
+   EXPOSURE — Modable's design language.
 
-.gradient-mesh {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
+   One idea runs through every token: the resting interface is
+   achromatic. Colour appears only where a surface is being read
+   (xenon, cold) or written (filament, warm). Depth comes from
+   value and light, never from drawn borders.
+   ============================================================ */
+
+.mdb, .mdb-aside, .mdb-over {
+  /* warm graphite ramp — film base, not plastic */
+  --ink-0: #0c0b0a;
+  --ink-1: #121110;
+  --ink-2: #191716;
+  --ink-3: #221f1d;
+  --ink-4: #2c2926;
+
+  /* light, not lines — used for material edges */
+  --lift:   rgba(255, 246, 235, 0.06);
+  --lift-2: rgba(255, 246, 235, 0.085);
+  --hair:   rgba(255, 244, 230, 0.10);
+
+  /* bone, never pure white */
+  --fg-0: #f0ece6;
+  --fg-1: #bab3aa;
+  --fg-2: #8c857d;
+  --fg-3: #675f58;
+
+  /* cold light = inspection */
+  --xenon:      #cfe9ff;
+  --xenon-mid:  #6fb4e4;
+  --xenon-dim:  #2f5a75;
+  --xenon-ghost: rgba(111, 180, 228, 0.10);
+
+  /* warm light = writing */
+  --filament:     #ffb454;
+  --filament-hot: #ffdca8;
+  --filament-dim: #8a5a1e;
+  --filament-ghost: rgba(255, 180, 84, 0.10);
+
+  --fault: #d6455e;
+
+  font-family: 'Archivo', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-variation-settings: 'wdth' 100;
+  background: var(--ink-0);
+  color: var(--fg-0);
+}
+
+.mdb ::selection, .mdb-aside ::selection, .mdb-over ::selection {
+  background: rgba(255, 180, 84, 0.26); color: #fff;
+}
+
+.mdb ::-webkit-scrollbar, .mdb-aside ::-webkit-scrollbar, .mdb-over ::-webkit-scrollbar { width: 10px; height: 10px; }
+.mdb ::-webkit-scrollbar-track, .mdb-aside ::-webkit-scrollbar-track, .mdb-over ::-webkit-scrollbar-track { background: transparent; }
+.mdb ::-webkit-scrollbar-thumb, .mdb-aside ::-webkit-scrollbar-thumb, .mdb-over ::-webkit-scrollbar-thumb {
+  background: var(--ink-4); border-radius: 5px; border: 3px solid transparent; background-clip: content-box;
+}
+.mdb ::-webkit-scrollbar-thumb:hover, .mdb-aside ::-webkit-scrollbar-thumb:hover { background: #3a3632; background-clip: content-box; }
+
+.mdb :focus-visible, .mdb-aside :focus-visible, .mdb-over :focus-visible {
+  outline: 1px solid var(--xenon-mid); outline-offset: 2px; border-radius: 4px;
+}
+
+/* ---------------- type roles ---------------- */
+
+/* the signature: Archivo pushed to its widest width axis, uppercase,
+   set large with almost no leading. Used for section identity only. */
+.mdb-display {
+  font-family: 'Archivo', sans-serif;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.015em;
+  line-height: 0.92;
+  color: var(--fg-0);
+}
+
+.mdb-mono {
+  font-family: 'Martian Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+
+.mdb-label {
+  font-family: 'Martian Mono', ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+.mdb-num {
+  font-family: 'Martian Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 300;
+  letter-spacing: -0.04em;
+  color: var(--fg-0);
+}
+
+/* ---------------- material ---------------- */
+
+/* a plane is a value change plus one line of light. never an outline. */
+.mdb-plane {
+  background: var(--ink-2);
+  border-radius: 10px;
+  box-shadow: inset 0 1px 0 var(--lift), 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.mdb-rule { height: 1px; background: var(--hair); border: 0; }
+
+/* ---------------- the plate ---------------- */
+
+.mdb-plate {
+  position: relative;
+  border-radius: 12px;
   overflow: hidden;
-  background: hsl(var(--background));
+  background:
+    radial-gradient(120% 70% at 50% -14%, rgba(255, 250, 240, 0.055), transparent 64%),
+    linear-gradient(180deg, var(--ink-1) 0%, #0e0d0c 68%, var(--ink-0) 100%);
+  box-shadow: inset 0 1px 0 var(--lift), inset 0 -30px 60px rgba(0, 0, 0, 0.5);
 }
 
-.gradient-mesh::before {
+/* engraved grid that recedes — a surface seen at an angle, not a dot pattern */
+.mdb-plate::before {
   content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: 
-    radial-gradient(ellipse at 20% 30%, hsl(262 83% 58% / 0.15) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, hsl(280 70% 50% / 0.15) 0%, transparent 50%),
-    radial-gradient(ellipse at 40% 80%, hsl(330 80% 50% / 0.12) 0%, transparent 50%),
-    radial-gradient(ellipse at 90% 70%, hsl(200 80% 50% / 0.1) 0%, transparent 50%);
-  animation: meshMove 25s ease-in-out infinite;
+  position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgba(255, 246, 235, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 246, 235, 0.05) 1px, transparent 1px);
+  background-size: 38px 38px;
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.42) 46%, rgba(0,0,0,0.16) 78%, transparent 100%);
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.42) 46%, rgba(0,0,0,0.16) 78%, transparent 100%);
 }
 
-@keyframes meshMove {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  25% { transform: translate(2%, 1%) scale(1.02); }
-  50% { transform: translate(-1%, 2%) scale(0.98); }
-  75% { transform: translate(1%, -1%) scale(1.01); }
+/* runs only while a scan is actually running */
+.mdb-plate-scan {
+  position: absolute; left: 0; right: 0; top: 0; height: 140px;
+  pointer-events: none; z-index: 2;
+  background: linear-gradient(to bottom,
+    transparent 0%,
+    rgba(111, 180, 228, 0.05) 70%,
+    rgba(207, 233, 255, 0.42) 100%);
+  animation: mdb-scan 2.1s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+@keyframes mdb-scan {
+  0%   { transform: translateY(-140px); opacity: 0; }
+  14%  { opacity: 1; }
+  86%  { opacity: 1; }
+  100% { transform: translateY(100%); opacity: 0; }
 }
 
-/* Subtle noise texture */
-.gradient-mesh::after {
+/* ---------------- app tile ---------------- */
+
+.mdb-tile {
+  position: relative;
+  display: flex; flex-direction: column; justify-content: space-between; gap: 12px;
+  min-height: 112px;
+  padding: 14px 14px 13px 26px;
+  text-align: left;
+  border-radius: 9px;
+  background: linear-gradient(180deg, var(--ink-3) 0%, var(--ink-2) 100%);
+  box-shadow: inset 0 1px 0 var(--lift), 0 1px 3px rgba(0, 0, 0, 0.45);
+  transition: transform 0.18s cubic-bezier(0.2, 0.7, 0.3, 1), box-shadow 0.18s ease, opacity 0.18s ease;
+}
+.mdb-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: inset 0 1px 0 var(--lift-2), 0 8px 20px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(111, 180, 228, 0.22);
+}
+.mdb-tile-inert { opacity: 0.64; }
+.mdb-tile-inert:hover {
+  transform: none;
+  opacity: 0.72;
+  box-shadow: inset 0 1px 0 var(--lift), 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+.mdb-tile-icon {
+  width: 30px; height: 30px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 7px;
+  background: var(--ink-1);
+  box-shadow: inset 0 1px 0 var(--lift);
+  overflow: hidden;
+}
+.mdb-tile-inert .mdb-tile-icon img { filter: grayscale(1); opacity: 0.55; }
+
+/* ---------------- SIGNATURE: the layer edge ----------------
+   An edge-on view of the application's layers. The app's own
+   layers sit at the bottom in graphite; every layer Modable has
+   written burns amber and stacks on top. Same glyph at 3px on a
+   tile and at 40px on the injection stage. */
+
+.mdb-edge {
+  display: flex; flex-direction: column; gap: 2px;
+}
+.mdb-edge i {
+  display: block; flex: 1; min-height: 3px; border-radius: 1px;
+  background: #3e3833;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+/* the seam: the next slot Modable can write into */
+.mdb-edge i.reachable { background: var(--xenon-dim); }
+.mdb-edge i.written {
+  background: var(--filament);
+  box-shadow: 0 0 7px rgba(255, 180, 84, 0.5);
+}
+.mdb-tile:hover .mdb-edge i.reachable { background: var(--xenon-mid); }
+.mdb-edge-abs { position: absolute; left: 11px; top: 13px; bottom: 12px; width: 4px; }
+
+/* ---------------- controls ---------------- */
+
+.mdb-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  height: 28px; padding: 0 11px;
+  border-radius: 6px;
+  background: var(--ink-3);
+  box-shadow: inset 0 1px 0 var(--lift);
+  color: var(--fg-1);
+  font-family: 'Martian Mono', ui-monospace, monospace;
+  font-size: 9px; font-weight: 400; letter-spacing: 0.04em; text-transform: uppercase;
+  white-space: nowrap;
+  transition: color 0.15s, background 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.mdb-btn:hover:not(:disabled) { color: var(--fg-0); background: var(--ink-4); box-shadow: inset 0 1px 0 var(--lift-2); }
+.mdb-btn:active:not(:disabled) { transform: translateY(0.5px); }
+.mdb-btn:disabled { opacity: 0.55; }
+
+/* the one warm control in the product — it writes */
+.mdb-btn-write {
+  background: linear-gradient(180deg, #ffc978, var(--filament));
+  color: #2a1a06;
+  font-weight: 600;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 2px 10px rgba(255, 180, 84, 0.22);
+}
+.mdb-btn-write:hover:not(:disabled) { background: linear-gradient(180deg, #ffd696, #ffbe66); color: #2a1a06; box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 3px 16px rgba(255, 180, 84, 0.32); }
+
+.mdb-input {
+  width: 100%;
+  background: var(--ink-1);
+  border-radius: 8px;
+  box-shadow: inset 0 1px 0 rgba(0,0,0,0.4), inset 0 0 0 1px var(--hair);
+  color: var(--fg-0);
+  transition: box-shadow 0.16s ease;
+}
+.mdb-input::placeholder { color: var(--fg-3); }
+.mdb-input:focus, .mdb-focus:focus-within {
+  outline: none;
+  box-shadow: inset 0 1px 0 rgba(0,0,0,0.4), inset 0 0 0 1px rgba(111, 180, 228, 0.5), 0 0 0 3px var(--xenon-ghost);
+}
+
+.mdb-kbd {
+  font-family: 'Martian Mono', ui-monospace, monospace;
+  font-size: 8.5px; line-height: 1;
+  padding: 4px 5px; border-radius: 4px;
+  color: var(--fg-2);
+  background: var(--ink-3);
+  box-shadow: inset 0 1px 0 var(--lift);
+}
+
+.mdb-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+.mdb-dot-live { background: var(--xenon-mid); box-shadow: 0 0 7px rgba(111, 180, 228, 0.8); }
+.mdb-dot-warm { background: var(--filament); box-shadow: 0 0 7px rgba(255, 180, 84, 0.8); }
+.mdb-dot-inert { background: var(--ink-4); }
+.mdb-dot-fail { background: var(--fault); }
+
+/* ---------------- sidebar ---------------- */
+
+.mdb-aside {
+  background: var(--ink-0);
+  box-shadow: inset -1px 0 0 var(--hair);
+}
+
+.mdb-nav {
+  position: relative;
+  display: flex; align-items: center; width: 100%; height: 32px;
+  padding: 0 10px; border-radius: 7px;
+  color: var(--fg-2);
+  transition: color 0.15s, background 0.15s;
+}
+.mdb-nav:hover { color: var(--fg-0); background: var(--ink-2); }
+.mdb-nav-on { color: var(--fg-0); background: var(--ink-2); box-shadow: inset 0 1px 0 var(--lift); }
+.mdb-nav-mark {
+  position: absolute; left: -10px; top: 50%; transform: translateY(-50%);
+  width: 2px; height: 15px; border-radius: 0 2px 2px 0; background: var(--filament);
+  box-shadow: 0 0 8px rgba(255, 180, 84, 0.6);
+}
+
+.mdb-resize { background: transparent; transition: background 0.15s; }
+.mdb-resize:hover { background: var(--xenon-dim); }
+
+/* ---------------- census (the log, as a layer stack) ---------------- */
+
+.mdb-census-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 3px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+  transition: background 0.14s;
+}
+.mdb-census-strip { width: 3px; align-self: stretch; border-radius: 1px; min-height: 22px; }
+.mdb-census-strip-ok { background: var(--filament); box-shadow: 0 0 8px rgba(255, 180, 84, 0.4); }
+.mdb-census-strip-fail { background: var(--fault); opacity: 0.7; }
+
+/* ---------------- terminal surface ----------------
+   The workspace is a terminal: the target application writes itself in as
+   ASCII, and every change is made at a prompt. Mono carries everything. */
+
+.mdb-term {
+  font-family: 'Martian Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.85;
+  font-variant-numeric: tabular-nums;
+}
+
+/* the art scales by font size alone, so compacting it never re-rasterises */
+.mdb-ascii-wrap { font-size: 10px; transition: font-size 0.42s cubic-bezier(0.2, 0.75, 0.25, 1); }
+.mdb-ascii-sm { font-size: 6px; }
+
+.mdb-ascii {
+  font-family: 'Martian Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1em;
+  line-height: 1em;
+  letter-spacing: 0;
+  white-space: pre;
+  margin: 0;
+  user-select: none;
+}
+
+/* the session tab, the way a terminal names its window */
+.mdb-term-tab {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 24px; padding: 0 11px; border-radius: 7px;
+  background: var(--ink-3);
+  box-shadow: inset 0 1px 0 var(--lift);
+  font-family: 'Martian Mono', ui-monospace, monospace;
+  font-size: 9.5px; color: var(--fg-1); white-space: nowrap;
+}
+
+.mdb-prompt { color: var(--filament); user-select: none; }
+
+.mdb-term-input {
+  background: transparent; border: 0; outline: none;
+  color: var(--fg-0);
+  caret-color: var(--filament);
+  font-family: 'Martian Mono', ui-monospace, monospace;
+  font-size: 11.5px;
+}
+.mdb-term-input::placeholder { color: var(--fg-3); }
+
+/* a suggested command — reads as terminal output, behaves as a control */
+.mdb-cmd {
+  display: flex; align-items: baseline; gap: 10px;
+  width: 100%; padding: 2px 8px 2px 0; border-radius: 4px;
+  color: var(--fg-1); text-align: left;
+  transition: color 0.13s, background 0.13s;
+}
+.mdb-cmd:hover:not(:disabled) { color: var(--fg-0); background: var(--ink-2); }
+.mdb-cmd:disabled { opacity: 0.6; }
+.mdb-cmd span:first-child { color: var(--fg-3); }
+.mdb-cmd:hover:not(:disabled) span:first-child { color: var(--filament); }
+.mdb-cmd-lead span:first-child { color: var(--filament); }
+/* declared after .mdb-cmd so an inline command keeps its own width */
+.mdb-cmd-inline { width: auto; padding-right: 10px; }
+
+.mdb-out { padding-left: 22px; color: var(--fg-1); }
+
+@keyframes mdb-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+.mdb-blink { animation: mdb-blink 1.05s steps(1) infinite; }
+
+/* ---------------- the code buffer ---------------- */
+
+.mdb-code {
+  font-family: 'Martian Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9.5px;
+  line-height: 1.95;
+  margin: 0;
+  tab-size: 2;
+}
+.mdb-code-line { display: flex; gap: 14px; }
+.mdb-code-no {
+  flex-shrink: 0; width: 22px; text-align: right;
+  color: #4b453f;
+  user-select: none;
+}
+.mdb-code-src { white-space: pre-wrap; word-break: break-word; min-width: 0; }
+.mdb-code-caret {
+  display: inline-block; width: 5px; height: 10px;
+  margin-left: 2px; vertical-align: -1px;
+  background: var(--xenon);
+  box-shadow: 0 0 8px rgba(207, 233, 255, 0.7);
+}
+
+/* ---------------- injection stage ---------------- */
+
+.mdb-over { position: fixed; inset: 0; z-index: 60; }
+
+.mdb-surface {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  background:
+    radial-gradient(120% 100% at 50% 0%, rgba(255, 250, 240, 0.055), transparent 60%),
+    var(--ink-1);
+  box-shadow: inset 0 1px 0 var(--lift), inset 0 0 70px rgba(0, 0, 0, 0.6);
+}
+.mdb-surface::before {
   content: '';
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  opacity: 0.02;
+  position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgba(255, 246, 235, 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 246, 235, 0.055) 1px, transparent 1px);
+  background-size: 28px 28px;
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.9), rgba(0,0,0,0.25) 60%, transparent);
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,0.9), rgba(0,0,0,0.25) 60%, transparent);
+}
+
+/* the measurement scale — only here, where the animation needs a
+   coordinate reference to align against */
+.mdb-scale {
+  position: absolute; top: 0; bottom: 0; width: 100%;
+  background-image: repeating-linear-gradient(to bottom,
+    rgba(255, 246, 235, 0.22) 0 1px, transparent 1px 14px);
   pointer-events: none;
 }
 
-/* ============================================
-   GLASSMORPHISM
-   ============================================ */
+.mdb-mask {
+  position: absolute;
+  inset: 14% 9%;
+  pointer-events: none;
+}
+.mdb-mask::before {
+  content: '';
+  position: absolute; inset: 0;
+  border: 1px dashed currentColor;
+  opacity: 0.4;
+}
+.mdb-mask b {
+  position: absolute; width: 9px; height: 9px;
+  border: 1px solid currentColor;
+}
+.mdb-mask b:nth-child(1) { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+.mdb-mask b:nth-child(2) { top: -1px; right: -1px; border-left: 0; border-bottom: 0; }
+.mdb-mask b:nth-child(3) { bottom: -1px; left: -1px; border-right: 0; border-top: 0; }
+.mdb-mask b:nth-child(4) { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
 
-.glass {
-  background: hsl(var(--card) / 0.6);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid hsl(var(--border) / 0.5);
+.mdb-stagerow {
+  display: grid; grid-template-columns: 10px minmax(0, 1fr); align-items: center; gap: 11px;
+  height: 26px;
+  font-family: 'Martian Mono', ui-monospace, monospace;
+  font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--fg-3);
+  transition: color 0.25s ease;
+}
+.mdb-stagerow-done { color: var(--fg-2); }
+.mdb-stagerow-live { color: var(--fg-0); }
+
+/* ---------------- motion discipline ---------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .mdb *, .mdb *::before, .mdb *::after,
+  .mdb-aside *, .mdb-over *, .mdb-over *::before, .mdb-over *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .mdb-plate-scan { animation: none; opacity: 0.5; top: 40%; }
+  .mdb-tile:hover { transform: none; }
 }
 
-.glass-strong {
-  background: hsl(var(--card) / 0.8);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid hsl(var(--border));
+/* ============================================================
+   DIMENSIONAL LAYER
+
+   Sculpted surfaces and glass controls. One rule governs it: the
+   object is cool and the room is warm, so a Surface Layer always
+   reads as a thing resting in Modable's space rather than a panel
+   painted on it. Nothing here draws a border.
+   ============================================================ */
+
+.mdb, .mdb-aside, .mdb-over {
+  --slab-hi:   #36414f;
+  --slab-mid:  #212832;
+  --slab-lo:   #171c23;
+  --slab-edge: #0e1116;
+
+  --glass:    rgba(228, 240, 255, 0.055);
+  --glass-hi: rgba(214, 234, 255, 0.14);
+
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 22px;
+  --r-xl: 34px;
+
+  --shadow-lift:  0 1px 2px rgba(0,0,0,.5), 0 6px 16px -8px rgba(0,0,0,.6);
+  --shadow-float: 0 2px 6px rgba(0,0,0,.5), 0 22px 48px -18px rgba(0,0,0,.75);
+  --shadow-deep:  0 4px 10px rgba(0,0,0,.55), 0 60px 120px -40px rgba(0,0,0,.9);
+
+  --ease-physical: cubic-bezier(.2,.75,.25,1);
 }
 
-/* ============================================
-   GRADIENT TEXT
-   ============================================ */
-
-.text-gradient {
-  background: linear-gradient(135deg, hsl(var(--foreground)) 0%, hsl(var(--muted-foreground)) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+/* the calm cut of Archivo — full-screen moments, where the expanded
+   uppercase chrome face would shout */
+.mdb-title {
+  font-family: 'Archivo', -apple-system, sans-serif;
+  font-variation-settings: 'wdth' 100;
+  font-weight: 550;
+  letter-spacing: -0.025em;
+  line-height: 1.06;
+  color: var(--fg-0);
 }
 
-.text-gradient-primary {
-  background: linear-gradient(135deg, hsl(262 83% 65%) 0%, hsl(330 80% 60%) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+/* ============================================================
+   THE ROOM
+
+   The onboarding screen is not a poster with an object floating on
+   it. It is a room: a lit floor receding to a horizon, a far wall
+   that catches the same cold light, and one object standing on the
+   floor. Everything below is the room's material. Nothing draws a
+   border — the room is described entirely by light falling off.
+   ============================================================ */
+
+.mdb-stage {
+  --gut: clamp(28px, 3.9vw, 56px);
+  --horizon: 60%;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-xl);
+  background:
+    /* the key light, thrown from high right onto the far corner */
+    radial-gradient(74% 66% at 78% 30%, rgba(111, 180, 228, .10), transparent 68%),
+    radial-gradient(120% 46% at 50% 0%, rgba(214, 232, 255, .045), transparent 70%),
+    /* the room's own falloff — bright at the horizon, black underfoot */
+    linear-gradient(180deg, #16151a 0%, #131218 30%, #100f14 var(--horizon), #0b0a0e 84%, #08070a 100%);
+  box-shadow: inset 0 1px 0 var(--lift-2), var(--shadow-deep);
 }
 
-/* ============================================
-   GLOW EFFECTS
-   ============================================ */
-
-.glow-sm {
-  box-shadow: 0 0 20px hsl(var(--primary) / 0.2);
+/* The far wall. Modable's engraved grid, seen flat-on and almost gone,
+   masked away over the left third so the headline sits on clean dark.
+   Its only job is to stop the upper half reading as empty space. */
+.mdb-room-wall {
+  position: absolute;
+  left: 0; right: 0; top: 0; height: var(--horizon);
+  background-image:
+    linear-gradient(to right, rgba(176, 208, 248, .13) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(176, 208, 248, .075) 1px, transparent 1px);
+  background-size: 88px 88px;
+  background-position: 50% 100%;
+  -webkit-mask-image:
+    linear-gradient(to bottom, transparent 2%, #000 52%, #000 100%),
+    linear-gradient(to right, transparent 24%, #000 56%, #000 100%);
+  mask-image:
+    linear-gradient(to bottom, transparent 2%, #000 52%, #000 100%),
+    linear-gradient(to right, transparent 24%, #000 56%, #000 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+  pointer-events: none;
 }
 
-.glow {
-  box-shadow: 0 0 30px hsl(var(--primary) / 0.3);
+/* The floor. Same grid laid in perspective, meeting the wall exactly at
+   the horizon so the two read as one continuous surface. This is the
+   ground the Surface Layer stands on. */
+.mdb-room-floor {
+  position: absolute;
+  left: -70%; right: -70%; top: var(--horizon); bottom: -1px;
+  background-image:
+    linear-gradient(to right, rgba(176, 208, 248, .26) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(176, 208, 248, .26) 1px, transparent 1px);
+  background-size: 60px 60px;
+  transform: perspective(560px) rotateX(70deg);
+  transform-origin: 50% 0%;
+  -webkit-mask-image:
+    linear-gradient(to bottom, transparent 0%, #000 14%, #000 44%, rgba(0, 0, 0, .3) 74%, transparent 94%),
+    linear-gradient(to right, transparent 10%, #000 30%, #000 86%, transparent 99%);
+  mask-image:
+    linear-gradient(to bottom, transparent 0%, #000 14%, #000 44%, rgba(0, 0, 0, .3) 74%, transparent 94%),
+    linear-gradient(to right, transparent 10%, #000 30%, #000 86%, transparent 99%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+  pointer-events: none;
 }
 
-.glow-lg {
-  box-shadow: 0 0 50px hsl(var(--primary) / 0.4);
+/* The seam where floor meets wall. A hairline of cold light, not a rule —
+   it is the room's brightest thing and it sits directly behind the object,
+   which is what welds the object to the space. */
+.mdb-room-horizon {
+  position: absolute;
+  left: 0; right: 0; top: var(--horizon);
+  height: 1px;
+  transform: translateY(-0.5px);
+  background: linear-gradient(to right,
+    transparent 4%, rgba(150, 200, 244, .10) 26%, rgba(196, 228, 255, .38) 66%, rgba(150, 200, 244, .07) 94%, transparent);
+  pointer-events: none;
+}
+.mdb-room-horizon::after {
+  content: '';
+  position: absolute;
+  left: 34%; right: 2%; top: 50%;
+  height: 168px;
+  transform: translateY(-50%);
+  background: radial-gradient(58% 50% at 62% 50%, rgba(111, 180, 228, .17), transparent 72%);
+  filter: blur(2px);
+  pointer-events: none;
 }
 
-/* Focus glow for inputs */
-.focus-glow:focus-within {
-  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2), 0 0 20px hsl(var(--primary) / 0.1);
+/* ---------- chrome rails ---------- */
+
+/* The rails are not separated by a line. They are separated by being on
+   a slightly different plane of light: a top sheen for the head, a floor
+   darkening for the foot. */
+.mdb-room-scrim {
+  position: absolute; inset: 0;
+  background: radial-gradient(60% 78% at 2% 52%, rgba(5, 5, 7, .92) 0%, rgba(5, 5, 7, .6) 44%, transparent 74%);
+  pointer-events: none;
 }
 
-/* ============================================
-   ANIMATIONS
-   ============================================ */
-
-.animate-in {
-  animation: fade-in 0.3s ease-out forwards;
+.mdb-rail-top {
+  background: linear-gradient(180deg, rgba(232, 242, 255, .035), transparent 92%);
+}
+.mdb-rail-foot {
+  background: linear-gradient(0deg, rgba(0, 0, 0, .82) 20%, rgba(0, 0, 0, .4) 62%, transparent 100%);
 }
 
-.stagger-1 { animation-delay: 0.05s; opacity: 0; }
-.stagger-2 { animation-delay: 0.1s; opacity: 0; }
-.stagger-3 { animation-delay: 0.15s; opacity: 0; }
-.stagger-4 { animation-delay: 0.2s; opacity: 0; }
-.stagger-5 { animation-delay: 0.25s; opacity: 0; }
+.mdb-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 27px; padding: 0 11px; border-radius: var(--r-sm);
+  background: rgba(228, 240, 255, .045);
+  box-shadow: inset 0 1px 0 rgba(228, 240, 255, .10);
+  color: var(--fg-1);
+  transition: background .16s var(--ease-physical), color .16s;
+}
+a.mdb-chip:hover { background: rgba(228, 240, 255, .085); color: var(--fg-0); }
 
-/* Selection */
-::selection {
-  background: hsl(var(--primary) / 0.3);
-  color: hsl(var(--foreground));
+/* ---------- SIGNATURE: the key intake ----------
+   Not a floating capsule. A slot machined into the panel: the panel is
+   raised into the light, the slot is cut out of it and falls into
+   shadow. Depth is doing the work a border would otherwise do. */
+
+.mdb-intake { position: relative; }
+
+.mdb-slot {
+  position: relative;
+  display: flex; align-items: center; gap: 10px;
+  height: 52px; padding: 0 7px 0 15px;
+  border-radius: 11px;
+  background: linear-gradient(180deg, #060508 0%, #0b0a0e 58%, #121016 100%);
+  box-shadow:
+    inset 0 3px 7px -2px rgba(0, 0, 0, 1),
+    inset 0 1px 0 rgba(0, 0, 0, 1),
+    inset 0 -1px 0 rgba(232, 242, 255, .1),
+    0 1px 0 rgba(255, 246, 234, .05);
+  transition: box-shadow .24s var(--ease-physical);
+}
+.mdb-slot:focus-within {
+  box-shadow:
+    inset 0 3px 7px -2px rgba(0, 0, 0, 1),
+    inset 0 1px 0 rgba(0, 0, 0, 1),
+    inset 0 -1px 0 rgba(111, 180, 228, .62),
+    0 1px 0 rgba(255, 246, 234, .05),
+    0 0 26px -6px rgba(111, 180, 228, .55);
+}
+.mdb-slot-fault, .mdb-slot-fault:focus-within {
+  box-shadow:
+    inset 0 3px 7px -2px rgba(0, 0, 0, 1),
+    inset 0 1px 0 rgba(0, 0, 0, 1),
+    inset 0 -1px 0 var(--fault),
+    0 1px 0 rgba(255, 246, 234, .05),
+    0 0 26px -8px rgba(214, 69, 94, .6);
+}
+/* the slot owns the focus state; nothing inside it may draw a second ring */
+.mdb-slot :focus-visible { outline: none; }
+
+/* the intake gauge — a LayerEdge stood on end in the slot's left gutter.
+   It fills as the key becomes something Modable can use. */
+.mdb-gauge {
+  display: flex; flex-direction: column-reverse; gap: 2px;
+  width: 3px; flex-shrink: 0;
+}
+.mdb-gauge i {
+  display: block; height: 5px; border-radius: 1px;
+  background: #302c28;
+  transition: background .3s var(--ease-physical), box-shadow .3s;
+}
+.mdb-gauge i.on { background: var(--xenon-dim); }
+.mdb-gauge i.full { background: var(--xenon-mid); box-shadow: 0 0 6px rgba(111, 180, 228, .7); }
+.mdb-gauge i.hot { background: var(--filament); box-shadow: 0 0 6px rgba(255, 180, 84, .8); }
+
+.mdb-key-input {
+  flex: 1; min-width: 0;
+  background: transparent; border: 0; outline: none;
+  font-family: 'Martian Mono', ui-monospace, monospace;
+  font-size: 11.5px;
+  font-weight: 350;
+  letter-spacing: 0.09em;
+  color: var(--fg-0);
+  caret-color: var(--xenon-mid);
+}
+.mdb-key-input::placeholder {
+  color: #4c4540;
+  letter-spacing: 0.02em;
+}
+.mdb-key-input:disabled { color: var(--fg-2); }
+
+.mdb-ghost {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: var(--r-sm);
+  color: var(--fg-3);
+  transition: color .16s, background .16s;
+}
+.mdb-ghost:hover { color: var(--fg-0); background: rgba(228, 240, 255, .06); }
+
+/* the one bright surface on the screen — cold, because nothing has been
+   written yet */
+.mdb-pill {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  height: 34px; padding: 0 14px; border-radius: var(--r-sm);
+  font-size: 12px; font-weight: 600; letter-spacing: -.005em;
+  color: #08131c; white-space: nowrap;
+  background: linear-gradient(180deg, #eef6ff, #b6d9f4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .85), 0 1px 2px rgba(0, 0, 0, .5), 0 4px 18px -6px rgba(111, 180, 228, .6);
+  transition: filter .18s var(--ease-physical), box-shadow .18s, transform .12s var(--ease-physical);
+}
+.mdb-pill:hover:not(:disabled) {
+  filter: brightness(1.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .95), 0 1px 2px rgba(0, 0, 0, .5), 0 6px 24px -6px rgba(111, 180, 228, .8);
+}
+.mdb-pill:active:not(:disabled) { transform: translateY(1px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7); }
+.mdb-pill:disabled { opacity: .42; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4); }
+
+/* ---------- the stage ladder ----------
+   Four named operations, printed on the panel before they run. Not a
+   progress bar: the live operation is underscored by a rule that draws
+   itself once and hands the baton on. */
+
+.mdb-ladder { display: flex; align-items: center; gap: 0; }
+.mdb-rung {
+  position: relative;
+  padding-bottom: 7px;
+  color: var(--fg-3);
+  opacity: .72;
+  transition: color .3s var(--ease-physical), opacity .3s;
+}
+.mdb-rung-done { color: var(--fg-2); opacity: 1; }
+.mdb-rung-live { color: var(--fg-0); opacity: 1; }
+.mdb-rung-tick {
+  width: 3px; height: 3px; border-radius: 50%;
+  background: rgba(255, 244, 230, .16);
+  margin: 0 11px 7px;
+  flex-shrink: 0;
+}
+
+/* ---------- SIGNATURE: the Surface Layer ----------
+   The face-on projection of the layer edge in the sidebar. Same object,
+   second view: planes with real thickness, lit cold from the upper left,
+   standing on the room's floor. Each plane carries a real application
+   detected on this machine — the schematic of its own window — so the
+   hero is a reading of the user's actual desktop, not an ornament. */
+
+.sl-stage { position: relative; perspective: 1150px; perspective-origin: 50% 42%; }
+.sl-rig { position: relative; transform-style: preserve-3d; }
+
+.sl-plane {
+  position: absolute; inset: 0;
+  border-radius: 26px;
+  background: linear-gradient(146deg, var(--slab-hi) 0%, var(--slab-mid) 54%, var(--slab-lo) 100%);
+  box-shadow:
+    inset 1.5px 1.5px 0 rgba(190, 222, 255, .14),
+    inset -1px -1px 0 rgba(0, 0, 0, .55),
+    0 1px 0 var(--slab-edge), 0 2px 0 var(--slab-edge),
+    0 3px 0 #0d0f13, 0 4px 0 #0c0e12, 0 5px 0 #0b0d11,
+    0 6px 0 #0a0c10, 0 7px 0 #090b0f, 0 8px 0 #08080c,
+    0 26px 40px -18px rgba(0, 0, 0, .9);
+}
+.sl-plane-sub {
+  background: linear-gradient(146deg, #232832 0%, #171b22 54%, #12151a 100%);
+}
+
+/* the cold key light raking across the top-left of each face */
+.sl-plane::after {
+  content: '';
+  position: absolute; inset: 0; border-radius: inherit;
+  background: linear-gradient(146deg,
+    rgba(207, 233, 255, .26) 0%, rgba(160, 200, 240, .09) 26%, transparent 46%);
+  pointer-events: none;
+}
+
+/* the printed face — where the application's own surface lives */
+.sl-face {
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* one region of the target app's window, drawn as the machine sees it */
+.sl-reg {
+  position: absolute;
+  border-radius: 2px;
+  background: rgba(150, 198, 242, .075);
+  box-shadow: inset 0 0 0 1px rgba(129, 190, 240, .32);
+}
+.sl-reg-line {
+  position: absolute;
+  height: 2px;
+  border-radius: 1px;
+  background: rgba(150, 198, 242, .2);
+  box-shadow: none;
+}
+/* the layer Modable writes — the only warm mark on this screen */
+.sl-reg-new {
+  background: rgba(255, 180, 84, .10);
+  box-shadow: inset 0 0 0 1px rgba(255, 180, 84, .62), 0 0 16px -3px rgba(255, 180, 84, .5);
+}
+
+.sl-mark {
+  position: absolute;
+  filter: grayscale(1) contrast(.8) brightness(1.1);
+  opacity: .32;
+  transition: filter .5s var(--ease-physical), opacity .5s;
+}
+.sl-face-read .sl-mark { filter: grayscale(.35) contrast(1) brightness(1.1); opacity: .8; }
+
+/* Pool and shadow live outside the rotated rig, in screen space, so they
+   read as light and shadow ON the floor rather than as another plane. */
+.sl-pool {
+  position: absolute; left: 50%; top: 88%;
+  width: 178%; height: 40%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(closest-side,
+    rgba(120, 186, 236, .32), rgba(105, 170, 225, .1) 44%, transparent 74%);
+  filter: blur(30px);
+  pointer-events: none;
+}
+
+/* cold light escaping the seam the peel opens between the top two planes */
+.sl-seam {
+  position: absolute; inset: 0; border-radius: inherit;
+  background: linear-gradient(146deg,
+    rgba(207, 233, 255, .72) 0%, rgba(140, 196, 244, .26) 16%, transparent 38%);
+  pointer-events: none;
+}
+
+/* the object throws its shadow down onto the floor, offset away from the
+   key light — this is what puts it ON the ground rather than over it */
+.sl-cast {
+  position: absolute; left: 55%; top: 97%;
+  width: 152%; height: 38%;
+  transform: translate(-50%, -50%) rotate(-3deg);
+  background: radial-gradient(closest-side, rgba(0, 0, 0, .8), rgba(0, 0, 0, .3) 48%, transparent 78%);
+  filter: blur(28px);
+  pointer-events: none;
+}
+
+.sl-contact {
+  position: absolute; left: 50%; top: 89%;
+  width: 118%; height: 22%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(closest-side, rgba(0, 0, 0, .95), rgba(0, 0, 0, .55) 44%, transparent 74%);
+  filter: blur(14px);
+  pointer-events: none;
+}
+
+/* ---------- the callout rail ----------
+   The object is annotated the way a part is annotated on a drawing.
+   Leaders run from the labels into the stack, so the labels and the
+   object are one figure and the space between them is structure. */
+
+.sl-lead { position: absolute; overflow: visible; pointer-events: none; }
+.sl-lead path { fill: none; stroke: rgba(150, 198, 242, .30); stroke-width: 1; }
+.sl-lead circle { fill: rgba(196, 228, 255, .8); }
+
+.sl-callout {
+  display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+  white-space: nowrap;
+  transition: opacity .3s var(--ease-physical);
+}
+.sl-callout-name {
+  font-family: 'Martian Mono', ui-monospace, monospace;
+  font-size: 10px; font-weight: 400; letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--fg-1);
+}
+.sl-callout-meta {
+  font-family: 'Martian Mono', ui-monospace, monospace;
+  font-size: 9px; font-weight: 300; letter-spacing: .06em;
+  color: var(--fg-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mdb-slot, .mdb-pill, .mdb-chip, .mdb-rung, .sl-mark { transition: none; }
 }
