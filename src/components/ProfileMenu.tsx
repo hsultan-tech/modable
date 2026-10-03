@@ -15,11 +15,8 @@ export function ProfileMenu({ onChangeApiKey, onViewHistory, onLogout }: Profile
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
-      }
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setIsOpen(false)
     }
-
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -30,50 +27,32 @@ export function ProfileMenu({ onChangeApiKey, onViewHistory, onLogout }: Profile
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center no-drag hover:bg-white/20 transition-colors"
+        className="w-7 h-7 rounded-md flex items-center justify-center no-drag text-[var(--fg-2)] hover:text-[var(--fg-0)] transition-colors"
+        style={{ background: 'var(--ink-3)', boxShadow: 'inset 0 1px 0 var(--lift)' }}
+        aria-label="Account"
       >
-        <User size={16} />
+        <User size={13} strokeWidth={1.75} />
       </button>
 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: -10 }}
+            initial={{ opacity: 0, scale: 0.97, y: -6 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            transition={{ duration: 0.15 }}
-            className="absolute right-0 mt-2 w-56 rounded-xl bg-neutral-900 border border-white/10 shadow-2xl overflow-hidden z-50"
+            exit={{ opacity: 0, scale: 0.97, y: -6 }}
+            transition={{ duration: 0.14 }}
+            className="absolute right-0 mt-2 w-52 rounded-lg overflow-hidden z-50 p-1.5"
+            style={{ background: 'var(--ink-2)', boxShadow: 'inset 0 1px 0 var(--lift-2), 0 14px 40px rgba(0,0,0,0.6), 0 0 0 1px var(--hair)' }}
           >
-            <div className="p-2">
-              <MenuItem
-                icon={<Key size={16} />}
-                label="Change API Key"
-                onClick={() => {
-                  setIsOpen(false)
-                  onChangeApiKey()
-                }}
-              />
-              {onViewHistory && (
-                <MenuItem
-                  icon={<History size={16} />}
-                  label="View History"
-                  onClick={() => {
-                    setIsOpen(false)
-                    onViewHistory()
-                  }}
-                />
-              )}
-              <div className="my-1 h-px bg-white/10" />
-              <MenuItem
-                icon={<LogOut size={16} />}
-                label="Logout"
-                onClick={() => {
-                  setIsOpen(false)
-                  onLogout()
-                }}
-                destructive
-              />
-            </div>
+            <MenuItem icon={<Key size={13} strokeWidth={1.75} />} label="Change API key"
+              onClick={() => { setIsOpen(false); onChangeApiKey() }} />
+            {onViewHistory && (
+              <MenuItem icon={<History size={13} strokeWidth={1.75} />} label="History"
+                onClick={() => { setIsOpen(false); onViewHistory() }} />
+            )}
+            <hr className="mdb-rule my-1.5" />
+            <MenuItem icon={<LogOut size={13} strokeWidth={1.75} />} label="Log out"
+              onClick={() => { setIsOpen(false); onLogout() }} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -81,53 +60,24 @@ export function ProfileMenu({ onChangeApiKey, onViewHistory, onLogout }: Profile
   )
 }
 
-function MenuItem({ 
-  icon, 
-  label, 
-  onClick, 
-  destructive 
-}: { 
-  icon: React.ReactNode
-  label: string
-  onClick: () => void
-  destructive?: boolean
-}) {
+function MenuItem({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
   return (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left ${
-        destructive 
-          ? 'text-red-400 hover:bg-red-500/10' 
-          : 'text-white/80 hover:bg-white/10 hover:text-white'
-      }`}
-    >
+    <button onClick={onClick} className="mdb-nav h-8 gap-2.5">
       {icon}
-      <span className="text-sm">{label}</span>
+      <span className="text-[12.5px]">{label}</span>
     </button>
   )
 }
 
-// API Key Change Modal
-interface ApiKeyChangeModalProps {
-  isOpen: boolean
-  onClose: () => void
-}
-
-export function ApiKeyChangeModal({ isOpen, onClose }: ApiKeyChangeModalProps) {
+export function ApiKeyChangeModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [newKey, setNewKey] = useState('')
   const [error, setError] = useState<string | null>(null)
   const { setApiKey } = useAppStore()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newKey.trim()) {
-      setError('Please enter an API key')
-      return
-    }
-    if (!newKey.startsWith('sk-')) {
-      setError('Invalid API key format')
-      return
-    }
+    if (!newKey.trim()) return setError('Enter an API key')
+    if (!newKey.startsWith('sk-')) return setError('An OpenAI key starts with sk-')
     setApiKey(newKey.trim())
     onClose()
   }
@@ -136,64 +86,43 @@ export function ApiKeyChangeModal({ isOpen, onClose }: ApiKeyChangeModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="mdb-over fixed inset-0 z-[70] flex items-center justify-center"
+      style={{ background: 'rgba(9,8,7,0.8)', backdropFilter: 'blur(6px)' }}
       onClick={onClose}
     >
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md mx-4 bg-neutral-900 border border-white/10 rounded-xl p-6 shadow-2xl"
+        initial={{ opacity: 0, scale: 0.98, y: 6 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        onClick={e => e.stopPropagation()}
+        className="w-full max-w-[400px] mx-4 rounded-xl p-6"
+        style={{ background: 'var(--ink-2)', boxShadow: 'inset 0 1px 0 var(--lift-2), 0 30px 80px rgba(0,0,0,0.7)' }}
       >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium text-white">Change API Key</h3>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-white/10 rounded transition-colors"
-          >
-            <X size={20} className="text-white/60" />
+        <div className="flex items-start justify-between mb-5">
+          <div>
+            <div className="mdb-label mb-2">Account</div>
+            <h3 className="mdb-display text-[17px]">Change API key</h3>
+          </div>
+          <button onClick={onClose} className="text-[var(--fg-3)] hover:text-[var(--fg-0)] transition-colors" aria-label="Close">
+            <X size={16} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="text-sm text-white/60 mb-2 block">
-              OpenAI API Key
-            </label>
-            <input
-              type="password"
-              value={newKey}
-              onChange={(e) => {
-                setNewKey(e.target.value)
-                setError(null)
-              }}
-              placeholder="sk-proj-..."
-              className="w-full px-3 py-2 bg-neutral-800 border border-white/10 rounded-lg text-white placeholder-white/30 focus:outline-none focus:border-white/30"
-            />
-            {error && (
-              <p className="text-red-400 text-sm mt-2">{error}</p>
-            )}
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="flex-1 px-4 py-2 bg-white hover:bg-white/90 text-black rounded-lg font-medium transition-colors"
-            >
-              Update Key
-            </button>
+          <input
+            type="password"
+            value={newKey}
+            onChange={e => { setNewKey(e.target.value); setError(null) }}
+            placeholder="sk-proj-…"
+            autoFocus
+            className="mdb-input px-3.5 py-2.5 text-[13px] outline-none"
+          />
+          {error && <p className="text-[11.5px]" style={{ color: 'var(--fault)' }}>{error}</p>}
+          <div className="flex gap-2.5 pt-1">
+            <button type="button" onClick={onClose} className="mdb-btn flex-1 h-9">Cancel</button>
+            <button type="submit" className="mdb-btn mdb-btn-write flex-1 h-9">Save key</button>
           </div>
         </form>
       </motion.div>
     </div>
   )
 }
-

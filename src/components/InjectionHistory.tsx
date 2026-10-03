@@ -1,157 +1,326 @@
-import { motion } from 'framer-motion'
-import { History, ArrowLeft, CheckCircle, XCircle, Clock, Code, Trash2 } from 'lucide-react'
-import { Sidebar } from './Sidebar'
-import { useAppStore } from '../stores/projectStore'
-import { TextAnimate } from './TextAnimate'
+import { useState, useMemo, useEffect, useRef } from 'react'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
+import { ArrowLeft, Search, Copy, Check, Trash2, X } from 'lucide-react'
+import { DashboardSidebar } from './DashboardSidebar'
+import { ApiKeyChangeModal } from './ProfileMenu'
+import { useAppStore, type InjectionRecord } from '../stores/projectStore'
 
-export function InjectionHistory() {
-  const { setApiKey, injectionHistory, deleteInjection } = useAppStore()
+type Status = 'active' | 'failed' | 'reverted'
+type Filter = 'all' | Status
 
-  const handleLogout = () => {
-    setApiKey(null)
-  }
+const STATUS_WORD: Record<Status, string> = { active: 'Active', failed: 'Failed', reverted: 'Reverted' }
 
-  const handleHome = () => {
-    window.location.href = '/'
-  }
+/** A record says whether its layer took. Nothing records a revert yet, so no
+ *  record is ever "reverted" — the filter is there for when one is. */
+function statusOf(r: InjectionRecord): Status {
+  return r.success ? 'active' : 'failed'
+}
 
-  const formatTime = (timestamp: number) => {
-    const date = new Date(timestamp)
-    const now = Date.now()
-    const diff = now - timestamp
-    
-    if (diff < 3600000) {
-      return `${Math.floor(diff / 60000)} minutes ago`
-    } else if (diff < 86400000) {
-      return `${Math.floor(diff / 3600000)} hours ago`
-    } else {
-      return date.toLocaleDateString()
+/** The first sentence: what a row has room for. The drawer shows the rest. */
+function gist(text: string) {
+  const t = String(text || '').trim()
+  const m = t.match(/^.*?[.!?](?=\s|$)/)
+  return m ? m[0] : t
+}
+
+export function InjectionHistory({ onBack }: { onBack?: () => void }) {
+  const { setApiKey, injectionHistory, deleteInjection, installedApps } = useAppStore()
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false)
+  const [filter, setFilter] = useState<Filter>('all')
+  const [query, setQuery] = useState('')
+  const [openId, setOpenId] = useState<string | null>(null)
+  const reduce = useReducedMotion()
+
+  const iconFor = useMemo(() => {
+    const byName = new Map(installedApps.map(a => [a.name.toLowerCase(), a]))
+    return (appName: string) => byName.get(appName.toLowerCase())
+  }, [installedApps])
+
+  const counts = useMemo(() => {
+    const c: Record<Filter, number> = { all: injectionHistory.length, active: 0, failed: 0, reverted: 0 }
+    for (const r of injectionHistory) c[statusOf(r)]++
+    return c
+  }, [injectionHistory])
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return injectionHistory
+      .filter(r => filter === 'all' || statusOf(r) === filter)
+      .filter(r => !q || `${r.modName} ${r.appName} ${r.description}`.toLowerCase().includes(q))
+      .sort((a, b) => b.timestamp - a.timestamp)
+  }, [injectionHistory, filter, query])
+
+  /** Chronological, broken only by day. */
+  const days = useMemo(() => {
+    const out: { label: string; records: InjectionRecord[] }[] = []
+    for (const r of visible) {
+      const label = dayLabel(r.timestamp)
+      const last = out[out.length - 1]
+      if (last && last.label === label) last.records.push(r)
+      else out.push({ label, records: [r] })
     }
-  }
+    return out
+  }, [visible])
+
+  const open = injectionHistory.find(r => r.id === openId) || null
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpenId(null) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   return (
-    <div className="h-full w-full frosty flex text-white overflow-hidden">
-      <Sidebar 
-        onLogout={handleLogout}
-        onHome={handleHome}
+    <div className="mdb h-full w-full flex overflow-hidden">
+      <DashboardSidebar
+        compact
+        activeView="history"
+        onLogout={() => setApiKey(null)}
+        onRefresh={onBack}
+        onHistory={() => {}}
+        onSettings={() => setShowApiKeyModal(true)}
       />
 
-      <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="px-8 py-6 border-b border-white/10">
-          <div className="flex items-center gap-4 mb-4">
-            <button 
-              onClick={handleHome}
-              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-                <History className="w-5 h-5" />
-              </div>
-              <div>
-                <TextAnimate 
-                  animation="blurInUp" 
-                  by="word"
-                  className="text-2xl font-medium"
-                  startOnView={false}
-                >
-                  Injection History
-                </TextAnimate>
-                <p className="text-white/40 text-sm">View all your past code injections</p>
-              </div>
-            </div>
-          </div>
+      <main className="ly" data-drawer={open ? '' : undefined}>
+        <div className="titlebar-drag ly-drag" />
 
-          {/* Stats */}
-          <div className="flex gap-4">
-            <div className="px-4 py-2 rounded-lg bg-white/5 border border-white/10">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-400" />
-                <span className="text-sm">
-                  <span className="font-medium text-white">{injectionHistory.filter(i => i.success).length}</span>
-                  <span className="text-white/40 ml-1">successful</span>
-                </span>
-              </div>
-            </div>
-            <div className="px-4 py-2 rounded-lg bg-white/5 border border-white/10">
-              <div className="flex items-center gap-2">
-                <XCircle className="w-4 h-4 text-red-400" />
-                <span className="text-sm">
-                  <span className="font-medium text-white">{injectionHistory.filter(i => !i.success).length}</span>
-                  <span className="text-white/40 ml-1">failed</span>
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <nav className="ly-head ws-crumb no-drag" aria-label="Location">
+          <button type="button" onClick={onBack}>
+            <ArrowLeft size={13} strokeWidth={1.8} aria-hidden />
+            Surfaces
+          </button>
+        </nav>
 
-        {/* Injection List */}
-        <div className="flex-1 overflow-y-auto p-8">
-          <div className="space-y-4 max-w-4xl">
-            {injectionHistory.map((injection, index) => (
-              <motion.div
-                key={injection.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="bg-neutral-900/50 border border-white/10 rounded-xl p-5 hover:border-white/20 transition-all"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-start gap-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                      injection.success ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'
-                    }`}>
-                      {injection.success ? 
-                        <CheckCircle className="w-5 h-5 text-green-400" /> : 
-                        <XCircle className="w-5 h-5 text-red-400" />
-                      }
-                    </div>
-                    <div>
-                      <h3 className="text-white font-medium mb-1">{injection.modName}</h3>
-                      <p className="text-white/60 text-sm mb-2">{injection.description}</p>
-                      <div className="flex items-center gap-3 text-xs text-white/40">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {formatTime(injection.timestamp)}
-                        </span>
-                        <span>•</span>
-                        <span>{injection.appName}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => deleteInjection(injection.id)}
-                    className="p-2 hover:bg-red-500/10 rounded transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4 text-white/40 hover:text-red-400 transition-colors" />
-                  </button>
+        <div className="ly-scroll">
+          <div className="ly-col">
+            <header className="ly-top">
+              <h1 className="ly-title">Layers</h1>
+              <p className="ly-sub">Everything Modable has changed on this machine.</p>
+            </header>
+
+            {injectionHistory.length > 0 && (
+              <div className="ly-bar no-drag">
+                <div className="ly-filters" role="tablist" aria-label="Filter layers">
+                  {(['all', 'active', 'failed', 'reverted'] as Filter[]).map(f => (
+                    <button
+                      key={f}
+                      type="button"
+                      role="tab"
+                      aria-selected={filter === f}
+                      data-on={filter === f ? '' : undefined}
+                      onClick={() => setFilter(f)}
+                    >
+                      {f === 'all' ? 'All' : STATUS_WORD[f]}
+                      <span className="ly-count">{counts[f]}</span>
+                    </button>
+                  ))}
                 </div>
+                <label className="ly-search">
+                  <Search size={12} strokeWidth={1.8} aria-hidden />
+                  <input
+                    value={query}
+                    onChange={e => setQuery(e.target.value)}
+                    placeholder="Search layers or apps"
+                    aria-label="Search layers"
+                    spellCheck={false}
+                  />
+                </label>
+              </div>
+            )}
 
-                {/* Code Preview */}
-                <details className="mt-3">
-                  <summary className="cursor-pointer text-sm text-white/60 hover:text-white/80 flex items-center gap-2 transition-colors">
-                    <Code className="w-4 h-4" />
-                    View code
-                  </summary>
-                  <pre className="mt-3 p-4 bg-neutral-950 rounded-lg text-xs text-white/60 font-mono overflow-x-auto border border-white/10">
-                    {injection.code}
-                  </pre>
-                </details>
-              </motion.div>
-            ))}
-
-            {injectionHistory.length === 0 && (
-              <div className="text-center py-20">
-                <History className="w-16 h-16 mx-auto mb-4 text-white/20" />
-                <p className="text-white/40 text-lg">No injections yet</p>
-                <p className="text-white/20 text-sm mt-2">Start modding apps to see your history here</p>
+            {injectionHistory.length === 0 ? (
+              <Empty
+                title="No layers yet"
+                body="Pick an application, describe a change, and every layer Modable writes will be listed here."
+              />
+            ) : !visible.length ? (
+              <Empty
+                title={query ? 'Nothing matches' : `No ${STATUS_WORD[filter as Status].toLowerCase()} layers`}
+                body={
+                  query
+                    ? `No layer or app matches “${query.trim()}”.`
+                    : filter === 'reverted'
+                      ? 'Layers you revert will show up here.'
+                      : filter === 'failed'
+                        ? 'Every layer Modable has written took.'
+                        : 'Nothing is active right now.'
+                }
+              />
+            ) : (
+              <div className="ly-feed">
+                {days.map(day => (
+                  <section key={day.label} className="ly-day">
+                    <h2 className="ly-day-t">{day.label}</h2>
+                    <ul>
+                      {day.records.map((r, i) => {
+                        const app = iconFor(r.appName)
+                        const status = statusOf(r)
+                        return (
+                          <motion.li
+                            key={r.id}
+                            initial={reduce ? false : { opacity: 0, y: 4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: Math.min(i, 8) * 0.02, duration: 0.2 }}
+                          >
+                            <button
+                              type="button"
+                              className="ly-row"
+                              data-on={openId === r.id ? '' : undefined}
+                              aria-expanded={openId === r.id}
+                              onClick={() => setOpenId(openId === r.id ? null : r.id)}
+                            >
+                              <AppGlyph name={r.appName} src={app?.realIcon} emoji={app?.icon} />
+                              <span className="ly-main">
+                                <span className="ly-name">{r.modName}</span>
+                                <span className="ly-desc">
+                                  <span className="ly-app">{r.appName}</span>
+                                  {r.description && <> · {gist(r.description)}</>}
+                                </span>
+                              </span>
+                              <span className="ly-status" data-s={status}>{STATUS_WORD[status]}</span>
+                              <time className="ly-time" dateTime={new Date(r.timestamp).toISOString()}>
+                                {relative(r.timestamp)}
+                              </time>
+                            </button>
+                          </motion.li>
+                        )
+                      })}
+                    </ul>
+                  </section>
+                ))}
               </div>
             )}
           </div>
         </div>
+
+        <AnimatePresence>
+          {open && (
+            <Detail
+              key={open.id}
+              record={open}
+              app={iconFor(open.appName)}
+              reduce={!!reduce}
+              onClose={() => setOpenId(null)}
+              onDelete={() => { deleteInjection(open.id); setOpenId(null) }}
+            />
+          )}
+        </AnimatePresence>
       </main>
+
+      <ApiKeyChangeModal isOpen={showApiKeyModal} onClose={() => setShowApiKeyModal(false)} />
     </div>
   )
+}
+
+function Detail({ record, app, reduce, onClose, onDelete }: {
+  record: InjectionRecord
+  app?: { realIcon?: string; icon?: string }
+  reduce: boolean
+  onClose: () => void
+  onDelete: () => void
+}) {
+  const [copied, setCopied] = useState(false)
+  const timer = useRef<number>()
+  useEffect(() => () => window.clearTimeout(timer.current), [])
+  const status = statusOf(record)
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(record.code)
+      setCopied(true)
+      window.clearTimeout(timer.current)
+      timer.current = window.setTimeout(() => setCopied(false), 1400)
+    } catch { /* clipboard refused; the code is still selectable below */ }
+  }
+
+  return (
+    <motion.aside
+      className="ly-drawer no-drag"
+      aria-label={`${record.modName} details`}
+      initial={reduce ? { opacity: 0 } : { opacity: 0, x: 16 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={reduce ? { opacity: 0 } : { opacity: 0, x: 16 }}
+      transition={{ duration: 0.2, ease: [0.2, 0.7, 0.3, 1] }}
+    >
+      <div className="ly-d-head">
+        <span className="ly-d-app">
+          <AppGlyph name={record.appName} src={app?.realIcon} emoji={app?.icon} small />
+          {record.appName}
+        </span>
+        <button type="button" className="mdb-buffer-close" onClick={onClose} aria-label="Close details">
+          <X size={14} strokeWidth={1.8} />
+        </button>
+      </div>
+
+      <div className="ly-d-body">
+        <h3 className="ly-d-name">{record.modName}</h3>
+        <p className="ly-d-meta">
+          <span className="ly-status" data-s={status}>{STATUS_WORD[status]}</span>
+          <span className="hs-sep" aria-hidden>·</span>
+          <span>{new Date(record.timestamp).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+          <span className="hs-sep" aria-hidden>·</span>
+          <span>{record.channel === 'spicetify' ? 'Spicetify' : 'CDP'}</span>
+        </p>
+        {record.description && <p className="ly-d-desc">{record.description}</p>}
+
+        <div className="ly-d-code-h">
+          <span>Generated code</span>
+          <button type="button" onClick={copy} disabled={!record.code}>
+            {copied ? <Check size={11} strokeWidth={2} /> : <Copy size={11} strokeWidth={1.8} />}
+            {copied ? 'Copied' : 'Copy'}
+          </button>
+        </div>
+        <pre className="ly-d-code">{record.code || '// no code was recorded for this layer'}</pre>
+      </div>
+
+      <div className="ly-d-foot">
+        <button type="button" className="ly-d-remove" onClick={onDelete}>
+          <Trash2 size={12} strokeWidth={1.8} />
+          Remove from history
+        </button>
+      </div>
+    </motion.aside>
+  )
+}
+
+function AppGlyph({ name, src, emoji, small }: { name: string; src?: string; emoji?: string; small?: boolean }) {
+  return (
+    <span className={small ? 'ly-glyph is-small' : 'ly-glyph'} aria-hidden>
+      {src ? <img src={src} alt="" draggable={false} /> : emoji || name.charAt(0).toUpperCase()}
+    </span>
+  )
+}
+
+function Empty({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="ly-empty">
+      <div className="ly-empty-t">{title}</div>
+      <p>{body}</p>
+    </div>
+  )
+}
+
+function dayLabel(timestamp: number) {
+  const d = new Date(timestamp)
+  const today = new Date()
+  const start = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime()
+  const days = Math.round((start(today) - start(d)) / 86400000)
+  if (days === 0) return 'Today'
+  if (days === 1) return 'Yesterday'
+  return d.toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', ...(d.getFullYear() !== today.getFullYear() ? { year: 'numeric' } : {}),
+  })
+}
+
+function relative(timestamp: number) {
+  const diff = Date.now() - timestamp
+  if (diff < 60000) return 'just now'
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`
+  // Past a day, count calendar days so a row agrees with its day heading.
+  const start = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime()
+  const days = Math.round((start(new Date()) - start(new Date(timestamp))) / 86400000)
+  if (days <= 1) return 'yesterday'
+  if (days < 7) return `${days}d ago`
+  return new Date(timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }

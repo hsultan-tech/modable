@@ -9,6 +9,15 @@ export interface InstalledApp {
   isElectron: boolean
   hasMods?: boolean
   modCount?: number
+  /** Which path modifies this app: evaluated into a live window over CDP, or
+   *  patched on disk by Spicetify. Absent from older responses, which are all
+   *  CDP — hence the cdp default everywhere this is read. */
+  channel?: 'cdp' | 'spicetify'
+  /** Whether that path is actually usable right now. Not the same as
+   *  isElectron: Spotify is reachable while never being Electron. */
+  reachable?: boolean
+  /** When it is not reachable, why — phrased for this app's own channel. */
+  blockedBecause?: string | null
 }
 
 export interface Message {
@@ -20,6 +29,17 @@ export interface Message {
     name: string
     description: string
     code: string
+    /** The CDP window this layer was written against, if it is still known. */
+    targetId?: string
+    /** The data-modable values this layer claims, used to verify and revert it. */
+    marks?: string[]
+    /** How this modification reaches the application: evaluated into a live
+     *  window over CDP, or written to disk and applied by the Spicetify CLI.
+     *  Absent on anything written before Spotify had its own path — those are
+     *  all CDP, which is why cdp is the default everywhere this is read. */
+    channel?: 'cdp' | 'spicetify'
+    /** spicetify only: whether this is a stylesheet or an extension. */
+    kind?: 'css' | 'js'
   }
 }
 
@@ -27,6 +47,16 @@ export interface AgentAction {
   type: 'thinking' | 'generating' | 'injecting'
   description: string
   timestamp: number
+}
+
+/** The four stages the Surface Injection sequence moves through. */
+export type InjectionStage = 'idle' | 'understand' | 'plan' | 'inject' | 'verify' | 'done' | 'fault'
+
+export interface InjectionRun {
+  stage: InjectionStage
+  modName: string
+  layersBefore: number
+  error?: string | null
 }
 
 export interface InjectionRecord {
@@ -37,6 +67,12 @@ export interface InjectionRecord {
   description: string
   success: boolean
   code: string
+  /** Which path applied it. Absent on records from before Spotify was split
+   *  off; those are CDP by definition. */
+  channel?: 'cdp' | 'spicetify'
+  /** spicetify only: the Modable file this record owns, so it can be reverted
+   *  individually later without guessing at the name again. */
+  slug?: string
 }
 
 interface AppState {
@@ -59,6 +95,16 @@ interface AppState {
   
   // Injection History
   injectionHistory: InjectionRecord[]
+
+  // The running Surface Injection sequence, if any
+  injectionRun: InjectionRun | null
+
+  // Code arriving from the model, shown in the buffer as it is written
+  draftCode: string
+
+  /** A request typed in the workspace composer, waiting for the run to pick
+   *  it up. Lets the composer start a write without owning the agent. */
+  pendingPrompt: string | null
   
   // Actions
   setInstalledApps: (apps: InstalledApp[]) => void
@@ -73,6 +119,9 @@ interface AppState {
   clearChat: () => void
   addInjection: (injection: Omit<InjectionRecord, 'id' | 'timestamp'>) => void
   deleteInjection: (id: string) => void
+  setInjectionRun: (run: InjectionRun | null) => void
+  setDraftCode: (code: string) => void
+  setPendingPrompt: (prompt: string | null) => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -87,6 +136,9 @@ export const useAppStore = create<AppState>((set) => ({
   currentAction: null,
   apiKey: localStorage.getItem('modable_api_key'),
   injectionHistory: JSON.parse(localStorage.getItem('modable_injection_history') || '[]'),
+  injectionRun: null,
+  pendingPrompt: null,
+  draftCode: '',
   
   // Actions
   setInstalledApps: (apps) => set({ installedApps: apps }),
@@ -98,7 +150,11 @@ export const useAppStore = create<AppState>((set) => ({
     messages: app ? [{
       id: crypto.randomUUID(),
       role: 'system',
-      content: `Ready to mod **${app.name}**!\n\n1. Click **Launch with Modable** to start ${app.name} with injection enabled\n2. Describe a feature you want to add\n3. Click **Inject** to add it instantly\n\nTry something like:\n• "Add a floating button that shows the time"\n• "Add a dark mode toggle"\n• "Add a word counter"`,
+      // Spotify is patched on disk, so "start it so the debugger can attach"
+      // is advice that cannot be followed there — it has no debugger.
+      content: app.channel === 'spicetify'
+        ? `${app.name} is ready to rewrite.\n\nModable modifies it through Spicetify: describe the change, and it is written as a file and applied to Spotify's own bundle. Restart Spotify afterwards to see it.\n\nFor example:\n"Make the now playing bar accent green"\n"Add a top bar button that skips 30 seconds forward"\n"Add a copy track name button to the top bar"`
+        : `${app.name} is ready to rewrite.\n\nStart it with Modable so the debugger can attach, describe the change you want, then write the layer.\n\nFor example:\n"Add a floating button that shows the time"\n"Add a dark mode toggle"\n"Count the words in the open document"`,
       timestamp: Date.now(),
     }] : [],
   }),
@@ -148,7 +204,7 @@ export const useAppStore = create<AppState>((set) => ({
     messages: state.selectedApp ? [{
       id: crypto.randomUUID(),
       role: 'system',
-      content: `Ready to mod **${state.selectedApp.name}**! Describe a feature to add.`,
+      content: `${state.selectedApp.name} is ready to rewrite. Describe the change you want.`,
       timestamp: Date.now(),
     }] : [],
   })),
@@ -164,6 +220,11 @@ export const useAppStore = create<AppState>((set) => ({
     return { injectionHistory: newHistory }
   }),
   
+  setInjectionRun: (run) => set({ injectionRun: run }),
+  setPendingPrompt: (prompt) => set({ pendingPrompt: prompt }),
+
+  setDraftCode: (code) => set({ draftCode: code }),
+
   deleteInjection: (id) => set((state) => {
     const newHistory = state.injectionHistory.filter(inj => inj.id !== id)
     localStorage.setItem('modable_injection_history', JSON.stringify(newHistory))

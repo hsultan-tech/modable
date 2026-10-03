@@ -31,10 +31,6 @@ interface DebuggerPagesResponse extends BaseResponse {
   pages: { title: string; url: string; type: string }[]
 }
 
-interface InjectResponse extends BaseResponse {
-  result?: unknown
-}
-
 const electronAPI = {
   // App detection
   getInstalledApps: (): Promise<AppsResponse> => ipcRenderer.invoke('apps:getInstalled'),
@@ -49,9 +45,9 @@ const electronAPI = {
   getDebuggerPages: (): Promise<DebuggerPagesResponse> => 
     ipcRenderer.invoke('apps:getDebuggerPages'),
   
-  injectCode: (code: string, targetUrl?: string): Promise<InjectResponse> => 
-    ipcRenderer.invoke('apps:injectCode', code, targetUrl),
-  
+  // Injection is not bridged. It goes to POST /api/inject, which verifies the
+  // layer actually landed before answering — see electron/main.ts.
+
   // Utility
   openAppFolder: (appPath: string): Promise<BaseResponse> => 
     ipcRenderer.invoke('apps:openFolder', appPath),
