@@ -44,6 +44,19 @@ yarn-error.log*
 # Testing
 coverage/
 
+# Local tooling and working artifacts (kept on disk, not published)
+.tmp
+graphify-out/
+gan-harness/
+references/
+.claude/settings.json
+.claude/settings.local.json
+*.screenstudio/
+
+# Large media: publish demo videos as GitHub Release assets, not in git
+*.mp4
+*.mov
+
 # Electron
 *.dmg
 *.zip

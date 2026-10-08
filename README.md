@@ -1,80 +1,104 @@
 # Modable
 
-An AI-powered agentic workforce for adding features to your applications. Modable uses GPT-4 to explore your codebase, understand your project structure, plan changes, and implement features autonomously.
+**Every app has a ceiling. Modable lifts it.**
 
-## Features
+Modable is an AI agent that adds new features directly to the desktop apps already running on your computer.
 
-- **Project Explorer**: Browse and search your codebase with a beautiful file tree interface
-- **Agentic AI**: GPT-4 powered agent that can read, understand, and modify your code
-- **Safe Changes**: Review all proposed changes in a diff viewer before applying them
-- **Auto Backups**: Every file modification is backed up before changes are applied
+[![Modable demo: Notion Spatial Mode and Discord Ghost Channels](docs/assets/demo-thumbnail.jpg)](https://github.com/hsultan-tech/modable/releases/download/launch-demo/modable-demo.mp4)
 
-## Getting Started
+<sub>▶ Watch the demo (80 s, MP4)</sub>
+
+## What it does
+
+Pick an app, describe the feature you want in a sentence, and Modable writes it into the app's live window. These features ship with Modable and run against the real apps:
+
+| Feature | App | Try asking |
+| --- | --- | --- |
+| **Spatial Mode** | Notion | "turn this page into a spatial canvas" |
+| **Ghost Channels** | Discord | "make me a channel about AI agents" |
+| **Conversation Map** | Discord | "untangle this channel" |
+| **Discord → Notion Project** | Discord + Notion | "turn this into a Notion project" |
+| **Command Center** | Slack | "turn this channel into a command center" |
+
+- **Notion Spatial Mode** adds a Spatial control beside Share. It turns the current page into a canvas of draggable section cards with pan, zoom, fit and connections. Exit Spatial puts the page back untouched.
+- **Discord Ghost Channels** adds a generated, local-only channel for a topic. It pulls the matching messages from across the server, each linked to the original. Nothing is posted to the server.
+- **Discord Conversation Map** lays the loaded messages out as separate conversations, joined by their real replies. Every message links back to its place in the chat.
+- **Discord → Notion Project** reads the channel or Ghost Channel on screen. It lays it out in Notion as a project with an overview, tasks, decisions, blockers, open questions and resources, each linked to its Discord message. Nothing is written to either app's data.
+- **Slack Command Center** sorts a channel's loaded messages into decisions, action items, blockers and open questions, each linked to its message.
+
+Anything else goes to the model. Prompts like "add a dark mode toggle", "add a floating clock to the header" or "count the words on screen" produce a new layer, written for the app's live UI on the spot.
+
+## How it works
+
+1. **Attach.** Modable starts the app with a Chrome DevTools Protocol debugging port, using a separate port per app (9222–9241). If the app is already running without one, Modable quits it and relaunches it.
+2. **Inspect.** It reads the app's live interface: what's on screen and where things can be placed.
+3. **Write.** Your request either matches one of the built-in features above or goes to the model (OpenAI, `gpt-4o` by default), which writes a layer for that interface.
+4. **Inject and verify.** The layer is evaluated in the app's window. Modable then checks that every element the layer claims actually appeared. A layer that doesn't verify is reverted, never left half-applied.
+5. **Revert.** Every layer can be removed from Modable.
+
+For Electron apps, layers live in the running window. Modable doesn't modify the app's files on disk. Spotify isn't Electron, so it goes through [Spicetify](https://spicetify.app): Modable writes its own `modable-*.js` extensions next to yours and runs `spicetify apply`. It never touches your theme or your other extensions.
+
+## Supported apps
+
+| App | Status |
+| --- | --- |
+| Notion | Tested: Spatial Mode, Discord → Notion Project, generic prompts |
+| Discord | Tested: Ghost Channels, Conversation Map, generic prompts |
+| Slack | Tested: Command Center, generic prompts |
+| Spotify | Via Spicetify. The App Store build can't be patched. |
+| VS Code, Figma, Obsidian, WhatsApp, Telegram | Detected if installed. Generic prompts work only when the installed build is Electron. Not individually tested. |
+
+Modable lists which installed apps it can reach. For any it can't, it says why.
+
+## Getting started
 
 ### Prerequisites
 
-- Node.js 18+ 
-- npm or yarn
-- OpenAI API key (get one at https://platform.openai.com/api-keys)
+- **macOS.** App discovery and session handling rely on `/Applications`, `lsof`, `sips` and `plutil`.
+- **Node.js 18+** and npm
+- **An OpenAI API key** ([get one](https://platform.openai.com/api-keys))
+- The apps you want to modify, installed in `/Applications`
+- For Spotify only: [Spicetify](https://spicetify.app/docs/getting-started)
 
-### Installation
+### Run it
 
 ```bash
-# Install dependencies
+git clone https://github.com/hsultan-tech/modable.git
+cd modable
 npm install
-
-# Start in development mode
-npm run dev
+npm run electron:dev
 ```
 
-### Usage
+`electron:dev` opens the desktop app and starts the local backend (`server.js`, port 3456) for you.
 
-1. Launch Modable
-2. Enter your OpenAI API key (stored locally, never sent to our servers)
-3. Click "Open Project" and select a folder containing your application code
-4. Describe the feature you want to add in the chat panel
-5. Watch as the agent explores your codebase and implements the feature
-6. Review and accept/reject the proposed changes
+On first launch, paste your OpenAI API key. It's stored in the app's local storage and sent only to OpenAI, through the local backend. You can change it later from the profile menu.
 
-## Tech Stack
+> If the window never appears and you see `Cannot read properties of undefined (reading 'whenReady')`, your shell has `ELECTRON_RUN_AS_NODE` set (VS Code terminals do this). Run `env -u ELECTRON_RUN_AS_NODE npm run electron:dev`.
 
-- **Electron** - Cross-platform desktop app
-- **React 18** - UI framework
-- **TypeScript** - Type safety
-- **Tailwind CSS** - Styling
-- **OpenAI GPT-4** - AI agent
-- **Monaco Editor** - Code viewing
-- **Zustand** - State management
+To run the UI in a browser instead of Electron:
 
-## Project Structure
-
-```
-modable/
-├── electron/           # Electron main process
-│   ├── main.ts        # Window management, IPC handlers
-│   └── preload.ts     # Context bridge for renderer
-├── src/
-│   ├── components/    # React UI components
-│   ├── agent/         # AI agent logic
-│   ├── stores/        # Zustand state management
-│   └── lib/           # Utility functions
-└── public/            # Static assets
+```bash
+npm run server   # backend on http://localhost:3456
+npm run dev      # UI on http://localhost:5173
 ```
 
 ## Development
 
 ```bash
-# Run in development mode with hot reload
-npm run dev
-
-# Build for production
-npm run electron:build
+npm test               # vitest, single run
+npm run test:watch     # vitest, watch mode
+npm run typecheck      # tsc --noEmit
+npm run build          # web build into dist/
+npm run electron:build # desktop build, packaged by electron-builder into release/
 ```
 
-## License
+### Layout
 
-MIT
-
-
-
-
+```
+electron/         Electron main process and preload
+server.js         Local backend: app discovery, sessions, probe, inject, verify, revert, model proxy
+lib/              Backend modules (sessions, verify, handoff, Spicetify adapter)
+src/agent/        Request routing, built-in layers (src/agent/layers/), agent loop
+src/components/   UI
+test/             Vitest suites
+```
