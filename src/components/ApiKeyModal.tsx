@@ -1,85 +1,76 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Eye, EyeOff, ArrowUpRight } from 'lucide-react'
+import { Eye, EyeOff, ArrowUpRight, Check } from 'lucide-react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { useAppStore } from '../stores/projectStore'
+import { useAppStore, InstalledApp } from '../stores/projectStore'
 import { api } from '../api'
 import { LayerEdge } from './LayerEdge'
-import {
-  SurfacePhase,
-  SurfaceTarget,
-  SURFACE_STEPS,
-  SURFACE_TIMING,
-} from './SurfaceLayer'
-import { calloutRailWidth, objectOverhang } from './SurfaceCallouts'
-import { AsciiSurface, SurfaceState } from './AsciiSurface'
-import { SurfaceCensus, CensusState } from './SurfaceCensus'
+import { SurfaceTarget } from './SurfaceLayer'
+import { RewriteField, FieldPhase, kindOf } from './RewriteField'
 
 const wait = (ms: number) => new Promise(r => setTimeout(r, ms))
 
-/** The onboarding sequence's phases, in the Surface's own vocabulary. */
-const SURFACE_STATE: Record<SurfacePhase, SurfaceState> = {
-  rest: 'idle',
-  attach: 'connecting',
-  read: 'inspecting',
-  rewrite: 'rewriting',
-  inject: 'rewriting',
-  done: 'success',
+/**
+ * The first run, as one title sequence: locked → authenticating → scanning →
+ * surfaces found → into the product. About 2.5s end to end when discovery is
+ * already in hand; scanning simply lasts as long as discovery really does.
+ */
+type Seq = 'locked' | 'auth' | 'scanning' | 'ready' | 'leaving'
+
+/** ms each beat is held. Scanning is a floor, not a fixed length. */
+const BEAT = {
+  auth: 560,
+  scanMin: 1300,
+  /** time per surface as the scan resolves it, clamped by count */
+  rowMin: 140,
+  rowMax: 260,
+  ready: 720,
+  leave: 600,
+} as const
+
+/** Names the scan line will carry before it says "+n". */
+const MAX_NAMES = 6
+
+const FIELD: Record<Seq, FieldPhase> = {
+  locked: 'idle',
+  auth: 'auth',
+  scanning: 'scanning',
+  ready: 'ready',
+  leaving: 'leaving',
 }
 
-/** What each operation does, printed on the panel before anything runs. */
-const STEP_NOTE: Record<(typeof SURFACE_STEPS)[number], string> = {
-  attach: 'take hold of the running surface',
-  read: 'read how the window is built',
-  rewrite: 'open a seam for the new layer',
-  inject: 'set the layer down and let go',
-}
-
-const OBJECT_MIN = 1080
-
-function useViewportWidth(): number {
-  const [w, setW] = useState(() => (typeof window === 'undefined' ? 1440 : window.innerWidth))
-  useEffect(() => {
-    const on = () => setW(window.innerWidth)
-    window.addEventListener('resize', on)
-    return () => window.removeEventListener('resize', on)
-  }, [])
-  return w
-}
+const EASE = [0.2, 0.75, 0.25, 1] as const
 
 export function ApiKeyModal() {
-  const { setApiKey } = useAppStore()
+  const { setApiKey, setInstalledApps } = useAppStore()
   const reduce = useReducedMotion() ?? false
   const [key, setKey] = useState('')
   const [showKey, setShowKey] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [phase, setPhase] = useState<SurfacePhase>('rest')
+  const [seq, setSeq] = useState<Seq>('locked')
+  const [revealed, setRevealed] = useState(0)
 
   const [targets, setTargets] = useState<SurfaceTarget[] | null>(null)
-  const [surveyFailed, setSurveyFailed] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  /** Discovery, as a promise the sequence can wait on without re-asking. */
+  const survey = useRef<Promise<SurfaceTarget[]>>()
+  /** The same reading, untouched, so the home screen opens already holding it. */
+  const discovered = useRef<InstalledApp[]>([])
+  /** Set when the user asks to skip ahead; wakes any beat in progress. */
+  const hurry = useRef<null | (() => void)>(null)
+  const hurried = useRef(false)
 
-  const connecting = phase !== 'rest'
-
-  const vw = useViewportWidth()
-  const showObject = vw >= OBJECT_MIN
-  const size = Math.round(Math.max(292, Math.min(372, vw * 0.262)))
-  const rail = useMemo(() => calloutRailWidth(size), [size])
-  const overhang = useMemo(() => objectOverhang(size), [size])
-
-  // The Surface owns its own motion and pointer response now, inside the
-  // render loop — none of it needs to pass through React any more.
+  const connecting = seq !== 'locked'
 
   /**
-   * The hero is a reading of this machine, so it needs a reading. `getApps`
-   * wants no key, which is exactly why it belongs on the screen that has not
-   * been given one yet.
+   * The scan is a reading of this machine, so it needs a reading. `getApps`
+   * wants no key, which is exactly why it can start before one is given.
    */
   useEffect(() => {
     let live = true
-    api
+    survey.current = api
       .getApps()
       .then(r => {
-        if (!live) return
+        discovered.current = r.apps ?? []
         const found = (r.apps ?? []).map(a => ({
           name: a.name,
           version: a.version,
@@ -92,48 +83,48 @@ export function ApiKeyModal() {
           reachable: a.reachable ?? a.isElectron,
           channel: a.channel ?? 'cdp',
         }))
-        // reachable surfaces first — those are the ones Modable can lift
-        found.sort((a, b) => Number(b.reachable) - Number(a.reachable))
-        setTargets(found)
-        if (found.length === 0) setSurveyFailed(true)
+        if (live) setTargets(found)
+        return found
       })
-      .catch(() => live && setSurveyFailed(true))
+      .catch(() => [] as SurfaceTarget[])
     return () => {
       live = false
     }
   }, [])
 
-  const scene = useMemo<SurfaceTarget[]>(() => {
-    if (targets && targets.length) return targets.filter(t => t.reachable ?? t.isElectron).slice(0, 3)
-    if (surveyFailed)
-      return [
-        { name: 'surface 03', version: 'unread', isElectron: false },
-        { name: 'surface 02', version: 'unread', isElectron: false },
-        { name: 'surface 01', version: 'unread', isElectron: false },
-      ]
-    return []
-  }, [targets, surveyFailed])
+  /** Only surfaces Modable can actually lift are counted and named. */
+  const surfaces = useMemo(() => (targets ?? []).filter(t => t.reachable ?? t.isElectron), [targets])
+  const shown = surfaces.slice(0, Math.min(revealed, MAX_NAMES))
+  const shownKey = shown.map(t => t.name).join('|')
+  const kinds = useMemo(() => shown.map(t => kindOf(t.name)), [shownKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const censusState: CensusState = !targets && !surveyFailed
-    ? 'surveying'
-    : surveyFailed || !targets?.length
-      ? 'empty'
-      : 'ready'
+  /** A beat of the sequence that a skip can cut short. */
+  const beat = (ms: number) =>
+    hurried.current
+      ? Promise.resolve()
+      : new Promise<void>(r => {
+          const id = setTimeout(r, ms)
+          hurry.current = () => {
+            clearTimeout(id)
+            r()
+          }
+        })
 
-  const trimmed = key.trim()
-  const plausible = trimmed.startsWith('sk-') || trimmed === 'test' || trimmed === 'demo'
-  /** Four cells, filled by how much of a usable key is actually in the slot. */
-  const charge = connecting
-    ? 4
-    : !trimmed
-      ? 0
-      : plausible
-        ? trimmed.length >= 40
-          ? 4
-          : trimmed.length >= 12
-            ? 3
-            : 2
-        : 1
+  /** Once access is granted, any key or click moves straight on. */
+  useEffect(() => {
+    if (seq !== 'scanning' && seq !== 'ready') return
+    const skip = (e: Event) => {
+      if (e instanceof KeyboardEvent && !['Enter', 'Escape', ' '].includes(e.key)) return
+      hurried.current = true
+      hurry.current?.()
+    }
+    window.addEventListener('keydown', skip)
+    window.addEventListener('pointerdown', skip)
+    return () => {
+      window.removeEventListener('keydown', skip)
+      window.removeEventListener('pointerdown', skip)
+    }
+  }, [seq])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -152,268 +143,227 @@ export function ApiKeyModal() {
     }
     setError(null)
 
-    if (reduce) return setApiKey(value)
+    // AUTHENTICATING — the ceiling lights, the app tightens under it
+    setSeq('auth')
+    await wait(reduce ? 160 : BEAT.auth)
 
-    // the injection sequence in miniature: take hold, read the surface, open
-    // it, set the new layer, hand it over
-    for (const step of SURFACE_STEPS) {
-      setPhase(step)
-      await wait(SURFACE_TIMING[step])
+    // SCANNING — the ceiling starts to lift; each real surface found pulls one
+    // more piece out of the app. If discovery is still running the scan simply
+    // stays open until it lands.
+    setSeq('scanning')
+    const began = performance.now()
+    const found = ((await survey.current) ?? []).filter(t => t.reachable ?? t.isElectron)
+    const steps = Math.min(found.length, MAX_NAMES)
+    if (reduce || hurried.current) {
+      setRevealed(steps)
+    } else {
+      const per = Math.max(BEAT.rowMin, Math.min(BEAT.rowMax, (BEAT.scanMin - 180) / Math.max(steps, 1)))
+      await beat(180)
+      for (let i = 1; i <= steps; i++) {
+        setRevealed(i)
+        await beat(per)
+        if (hurried.current) setRevealed(steps)
+      }
+      const left = BEAT.scanMin - (performance.now() - began)
+      if (left > 0) await beat(left)
     }
-    setPhase('done')
-    await wait(SURFACE_TIMING.done)
+
+    // READY — the ceiling is all the way up: "N surfaces found"
+    setSeq('ready')
+    await beat(reduce ? 700 : BEAT.ready)
+
+    // HANDOFF — the surface recedes into the product's own ground
+    setSeq('leaving')
+    await wait(reduce ? 220 : BEAT.leave)
+    // the home screen still runs its own scan; this only spares it opening
+    // on an empty room for the moment that takes
+    if (discovered.current.length) setInstalledApps(discovered.current)
     setApiKey(value)
   }
 
-  const stepIndex = SURFACE_STEPS.indexOf(phase as (typeof SURFACE_STEPS)[number])
+  const settled = seq === 'ready' || seq === 'leaving'
+  const count = surfaces.length
+  const overflow = settled ? Math.max(0, count - MAX_NAMES) : 0
+
+  const status =
+    seq === 'auth'
+      ? 'Verifying key'
+      : seq === 'scanning'
+        ? 'Scanning this machine'
+        : count > 0
+          ? `${count} ${count === 1 ? 'surface' : 'surfaces'} found`
+          : 'No surfaces in reach yet'
+
+  const rise = (delay: number) =>
+    reduce
+      ? {}
+      : {
+          initial: { opacity: 0, y: 14 },
+          animate: { opacity: 1, y: 0 },
+          transition: { duration: 0.9, ease: EASE, delay },
+        }
 
   return (
-    <div className="mdb mdb-onb h-full w-full p-5 titlebar-drag">
-      <div className="mdb-stage h-full w-full flex flex-col">
-        {/* ---------- the room ---------- */}
-        <div className="mdb-room-wall" />
-        <div className="mdb-room-floor" />
-        <div className="mdb-room-horizon" />
-        <div className="mdb-room-scrim" />
+    <div className="mdb onb h-full w-full" data-seq={seq}>
+      {/* ---------- the ceiling: one app, and the limit it is held under ---------- */}
+      <RewriteField phase={FIELD[seq]} kinds={kinds} total={targets ? surfaces.length : 0} reduce={reduce} />
+      <div className="onb-scrim" aria-hidden="true" />
+      <div className="onb-grain" aria-hidden="true" />
+      <div className="onb-drag titlebar-drag" />
 
-        {/* ---------- head rail ---------- */}
-        <motion.header
-          className="mdb-rail-top"
-          initial={reduce ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6 }}
+      <header className="onb-mark onb-recede">
+        <LayerEdge written={1} reachable slots={4} className="w-[5px] h-[15px] shrink-0" />
+        <span className="mdb-label" style={{ letterSpacing: '.2em' }}>
+          Modable
+        </span>
+      </header>
+
+      <main className="onb-hero onb-recede">
+        <motion.h1 className="onb-title" {...rise(0.25)}>
+          Every app has a ceiling.
+          <br />
+          Modable lifts it.
+        </motion.h1>
+        <motion.p className="onb-sub" {...rise(0.4)}>
+          Rewrite the apps already running on your machine.
+        </motion.p>
+
+        <motion.form
+          onSubmit={handleSubmit}
+          noValidate
+          className="onb-key no-drag"
+          data-seq={seq}
+          {...rise(0.55)}
         >
-          <div className="flex items-center gap-2.5">
-            <LayerEdge written={1} reachable slots={4} className="w-[5px] h-[15px] shrink-0" />
-            <span className="mdb-label" style={{ letterSpacing: '.2em' }}>
-              Modable
-            </span>
+          <div className={`mdb-slot onb-slot ${error ? 'mdb-slot-fault' : ''}`}>
+            <input
+              id="mdb-key"
+              ref={inputRef}
+              type={showKey ? 'text' : 'password'}
+              value={key}
+              onChange={e => {
+                setKey(e.target.value)
+                setError(null)
+              }}
+              placeholder="sk-  OpenAI key"
+              disabled={connecting}
+              autoFocus
+              autoComplete="off"
+              spellCheck={false}
+              aria-label="OpenAI API key"
+              aria-invalid={!!error}
+              className="mdb-key-input no-drag"
+            />
+            <button
+              type="button"
+              onClick={() => setShowKey(!showKey)}
+              className="mdb-ghost no-drag shrink-0"
+              aria-label={showKey ? 'Hide key' : 'Show key'}
+              disabled={connecting}
+            >
+              {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
+            </button>
+            <button
+              type="submit"
+              disabled={connecting}
+              className={`mdb-pill no-drag shrink-0 ${
+                seq === 'auth' ? 'is-busy' : connecting ? 'is-done' : ''
+              }`}
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key={seq === 'locked' ? 'connect' : seq === 'auth' ? 'auth' : 'done'}
+                  className="mdb-pill-face"
+                  initial={reduce ? false : { opacity: 0, y: 3 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={reduce ? undefined : { opacity: 0, y: -3 }}
+                  transition={{ duration: 0.1, ease: EASE }}
+                >
+                  {seq === 'locked' ? (
+                    'Connect'
+                  ) : seq === 'auth' ? (
+                    <>
+                      <i className="mdb-pill-pulse" aria-hidden="true" />
+                      Verifying
+                    </>
+                  ) : (
+                    <>
+                      <Check size={13} strokeWidth={2.4} aria-hidden="true" />
+                      Connected
+                    </>
+                  )}
+                </motion.span>
+              </AnimatePresence>
+            </button>
           </div>
-          {/* the rail speaks only when there is something to say — at rest the
-              whole screen already means "no key on file" */}
-          <AnimatePresence>
-            {(connecting || error) && (
-              <motion.div
-                className="flex items-center gap-2.5"
+        </motion.form>
+
+        {/* one quiet line: the key note at rest, the status once it runs */}
+        <motion.div className="onb-line" {...rise(0.7)}>
+          <AnimatePresence mode="wait" initial={false}>
+            {error ? (
+              <motion.p
+                key="error"
+                className="onb-note onb-fault"
+                role="alert"
                 initial={reduce ? false : { opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
-                <span
-                  className={`mdb-dot ${
-                    phase === 'done' ? 'mdb-dot-warm' : connecting ? 'mdb-dot-live' : 'mdb-dot-fail'
-                  }`}
-                />
-                <span className="mdb-label" style={{ letterSpacing: '.16em' }}>
-                  {phase === 'done' ? 'access granted' : connecting ? phase : 'key rejected'}
+                {error}
+              </motion.p>
+            ) : !connecting ? (
+              <motion.p
+                key="note"
+                className="onb-note"
+                initial={reduce ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                The key stays on this machine and is sent only to OpenAI.
+                <a
+                  href="https://platform.openai.com/api-keys"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="onb-link no-drag"
+                >
+                  Get a key
+                  <ArrowUpRight size={11} strokeWidth={2} />
+                </a>
+              </motion.p>
+            ) : (
+              <motion.div
+                key="status"
+                className="onb-status"
+                aria-live="polite"
+                initial={reduce ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <span className={`onb-state ${settled && count > 0 ? 'is-found' : ''}`}>
+                  <i className="onb-dot" aria-hidden="true" />
+                  {status}
+                </span>
+                <span className="onb-names">
+                  {shown.map((t, i) => (
+                    <motion.span
+                      key={t.name}
+                      className="onb-name"
+                      initial={reduce ? false : { opacity: 0, y: 3 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.36, ease: EASE }}
+                    >
+                      {i > 0 && <i className="onb-sep" aria-hidden="true" />}
+                      {t.name}
+                    </motion.span>
+                  ))}
+                  {overflow > 0 && <span className="onb-name onb-more">+{overflow}</span>}
                 </span>
               </motion.div>
             )}
           </AnimatePresence>
-        </motion.header>
-
-        <main className="mdb-body">
-          {/* ---------- the working column ---------- */}
-          <motion.div
-            className="mdb-col no-drag"
-            initial={reduce ? false : { opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: [0.2, 0.75, 0.25, 1] }}
-          >
-            <div>
-              <h1 className="mdb-title mdb-lede">
-                Every app has a surface.
-                <br />
-                Modable lifts it.
-              </h1>
-              <p className="mdb-sub">
-                Read the applications already on this machine, see how they are built, and write
-                new layers onto them.
-              </p>
-            </div>
-
-            {/* ---------- SIGNATURE: the key intake ---------- */}
-            <form onSubmit={handleSubmit} noValidate className="mdb-intake">
-              <div className="mdb-intake-head">
-                <label htmlFor="mdb-key" className="mdb-label" style={{ letterSpacing: '.16em' }}>
-                  OpenAI key
-                </label>
-              </div>
-
-              <div className={`mdb-slot ${error ? 'mdb-slot-fault' : ''}`}>
-                <span className="mdb-gauge" aria-hidden="true">
-                  {[0, 1, 2, 3].map(i => (
-                    <i
-                      key={i}
-                      className={
-                        i < charge
-                          ? phase === 'done'
-                            ? 'hot'
-                            : charge === 4
-                              ? 'full'
-                              : 'on'
-                          : ''
-                      }
-                    />
-                  ))}
-                </span>
-
-                <input
-                  id="mdb-key"
-                  ref={inputRef}
-                  type={showKey ? 'text' : 'password'}
-                  value={key}
-                  onChange={e => {
-                    setKey(e.target.value)
-                    setError(null)
-                  }}
-                  placeholder="sk-"
-                  disabled={connecting}
-                  autoFocus
-                  autoComplete="off"
-                  spellCheck={false}
-                  aria-label="OpenAI API key"
-                  aria-invalid={!!error}
-                  className="mdb-key-input no-drag"
-                />
-
-                <button
-                  type="button"
-                  onClick={() => setShowKey(!showKey)}
-                  className="mdb-ghost no-drag shrink-0"
-                  aria-label={showKey ? 'Hide key' : 'Show key'}
-                >
-                  {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
-                <button type="submit" disabled={connecting} className="mdb-pill no-drag shrink-0">
-                  {phase === 'done' ? 'Granted' : connecting ? 'Working' : 'Connect'}
-                </button>
-              </div>
-
-              {/* one line, so nothing below it ever moves */}
-              <div className="mdb-say">
-                <AnimatePresence mode="wait">
-                  {error ? (
-                    <motion.p
-                      key={error}
-                      initial={reduce ? false : { opacity: 0, x: -3 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0 }}
-                      className="mdb-say-fault"
-                      role="alert"
-                    >
-                      {error}
-                    </motion.p>
-                  ) : phase === 'done' ? (
-                    <motion.p
-                      key="done"
-                      initial={reduce ? false : { opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="mdb-say-ok"
-                    >
-                      Surface modified — handing you the desk.
-                    </motion.p>
-                  ) : null}
-                </AnimatePresence>
-              </div>
-
-              {/* At rest the four operations are one quiet line — naming what
-                  will happen without explaining it four times over. The full
-                  ladder only unfolds once something is actually running. */}
-              {!connecting ? (
-                <p className="mdb-ladder-rest mdb-label">{SURFACE_STEPS.join('  ·  ')}</p>
-              ) : (
-              <ol className="mdb-ladder">
-                {SURFACE_STEPS.map((step, i) => {
-                  const done = phase === 'done' || (stepIndex > -1 && i < stepIndex)
-                  const live = stepIndex === i
-                  return (
-                    <li
-                      key={step}
-                      className={`mdb-rung ${live ? 'is-live' : done ? 'is-done' : ''}`}
-                    >
-                      <span className="mdb-rung-no">{String(i + 1).padStart(2, '0')}</span>
-                      <span className="mdb-rung-name">
-                        {step}
-                        {live && (
-                          <motion.span
-                            className="mdb-rung-draw"
-                            style={{
-                              background:
-                                step === 'inject' ? 'var(--filament)' : 'var(--xenon-mid)',
-                            }}
-                            initial={{ scaleX: 0 }}
-                            animate={{ scaleX: 1 }}
-                            transition={{
-                              duration: SURFACE_TIMING[step] / 1000,
-                              ease: 'linear',
-                            }}
-                          />
-                        )}
-                        {done && <span className="mdb-rung-struck" />}
-                      </span>
-                      <span className="mdb-rung-note">{STEP_NOTE[step]}</span>
-                    </li>
-                  )
-                })}
-              </ol>
-              )}
-            </form>
-
-            <SurfaceCensus
-              apps={targets ?? []}
-              onStage={scene.map(s => s.name)}
-              state={censusState}
-              phase={phase}
-            />
-          </motion.div>
-
-          {/* ---------- the room's one occupant, annotated ---------- */}
-          {showObject && (
-            <motion.div
-              className="mdb-specimen"
-              style={
-                {
-                  width: rail + size + overhang,
-                  height: size,
-                  '--sl-overhang': `${overhang}px`,
-                } as React.CSSProperties
-              }
-              initial={reduce ? false : { opacity: 0, y: 22 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.9, ease: [0.2, 0.75, 0.25, 1], delay: 0.16 }}
-            >
-              {/* The hero is a real solid now — lit, turning in perspective,
-                  drawn to a character grid — not planes under CSS transforms.
-                  The callout leaders came off with it: they were ruled against
-                  the old rig's projection maths and mean nothing here. */}
-              <AsciiSurface state={SURFACE_STATE[phase]} fontSize={6.6} />
-            </motion.div>
-          )}
-        </main>
-
-        {/* ---------- foot rail ---------- */}
-        <motion.footer
-          className="mdb-rail-foot"
-          initial={reduce ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.7, delay: 0.35 }}
-        >
-          <span className="mdb-foot-note">
-            The key is kept on this machine and sent only to OpenAI.
-          </span>
-          <a
-            href="https://platform.openai.com/api-keys"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mdb-chip no-drag"
-          >
-            Get a key
-            <ArrowUpRight size={13} strokeWidth={2} />
-          </a>
-        </motion.footer>
-      </div>
+        </motion.div>
+      </main>
     </div>
   )
 }

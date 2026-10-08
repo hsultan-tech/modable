@@ -610,205 +610,11 @@ html, body, #root {
   --ease-physical: cubic-bezier(.2,.75,.25,1);
 }
 
-/* the calm cut of Archivo — full-screen moments, where the expanded
-   uppercase chrome face would shout */
-.mdb-title {
-  font-family: 'Archivo', -apple-system, sans-serif;
-  font-variation-settings: 'wdth' 100;
-  font-weight: 550;
-  letter-spacing: -0.025em;
-  line-height: 1.06;
-  color: var(--fg-0);
-}
-
-/* ============================================================
-   THE ROOM
-
-   The onboarding screen is not a poster with an object floating on
-   it. It is a room: a lit floor receding to a horizon, a far wall
-   that catches the same cold light, and one object standing on the
-   floor. Everything below is the room's material. Nothing draws a
-   border — the room is described entirely by light falling off.
-   ============================================================ */
-
-.mdb-stage {
-  --gut: clamp(28px, 3.9vw, 56px);
-  --horizon: 60%;
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--r-xl);
-  background:
-    /* the key light, thrown from high right onto the far corner */
-    radial-gradient(74% 66% at 78% 30%, rgba(111, 180, 228, .10), transparent 68%),
-    radial-gradient(120% 46% at 50% 0%, rgba(214, 232, 255, .045), transparent 70%),
-    /* the room's own falloff — bright at the horizon, black underfoot */
-    linear-gradient(180deg, #16151a 0%, #131218 30%, #100f14 var(--horizon), #0b0a0e 84%, #08070a 100%);
-  box-shadow: inset 0 1px 0 var(--lift-2), var(--shadow-deep);
-}
-
-/* The far wall. Modable's engraved grid, seen flat-on and almost gone,
-   masked away over the left third so the headline sits on clean dark.
-   Its only job is to stop the upper half reading as empty space. */
-.mdb-room-wall {
-  position: absolute;
-  left: 0; right: 0; top: 0; height: var(--horizon);
-  background-image:
-    linear-gradient(to right, rgba(255, 246, 235, .12) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 246, 235, .07) 1px, transparent 1px);
-  background-size: 88px 88px;
-  background-position: 50% 100%;
-  -webkit-mask-image:
-    linear-gradient(to bottom, transparent 2%, #000 52%, #000 100%),
-    linear-gradient(to right, transparent 24%, #000 56%, #000 100%);
-  mask-image:
-    linear-gradient(to bottom, transparent 2%, #000 52%, #000 100%),
-    linear-gradient(to right, transparent 24%, #000 56%, #000 100%);
-  -webkit-mask-composite: source-in;
-  mask-composite: intersect;
-  pointer-events: none;
-}
-
-/* The floor. Same grid laid in perspective, meeting the wall exactly at
-   the horizon so the two read as one continuous surface. This is the
-   ground the Surface Layer stands on. */
-.mdb-room-floor {
-  position: absolute;
-  left: -70%; right: -70%; top: var(--horizon); bottom: -1px;
-  background-image:
-    linear-gradient(to right, rgba(255, 246, 235, .24) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 246, 235, .24) 1px, transparent 1px);
-  background-size: 60px 60px;
-  transform: perspective(560px) rotateX(70deg);
-  transform-origin: 50% 0%;
-  -webkit-mask-image:
-    linear-gradient(to bottom, transparent 0%, #000 14%, #000 44%, rgba(0, 0, 0, .3) 74%, transparent 94%),
-    linear-gradient(to right, transparent 10%, #000 30%, #000 86%, transparent 99%);
-  mask-image:
-    linear-gradient(to bottom, transparent 0%, #000 14%, #000 44%, rgba(0, 0, 0, .3) 74%, transparent 94%),
-    linear-gradient(to right, transparent 10%, #000 30%, #000 86%, transparent 99%);
-  -webkit-mask-composite: source-in;
-  mask-composite: intersect;
-  pointer-events: none;
-}
-
-/* The seam where floor meets wall. A hairline of cold light, not a rule —
-   it is the room's brightest thing and it sits directly behind the object,
-   which is what welds the object to the space. */
-.mdb-room-horizon {
-  position: absolute;
-  left: 0; right: 0; top: var(--horizon);
-  height: 1px;
-  transform: translateY(-0.5px);
-  background: linear-gradient(to right,
-    transparent 4%, rgba(255, 240, 220, .09) 26%, rgba(255, 246, 235, .34) 66%, rgba(255, 240, 220, .06) 94%, transparent);
-  pointer-events: none;
-}
-.mdb-room-horizon::after {
-  content: '';
-  position: absolute;
-  left: 34%; right: 2%; top: 50%;
-  height: 168px;
-  transform: translateY(-50%);
-  background: radial-gradient(58% 50% at 62% 50%, rgba(255, 236, 210, .12), transparent 72%);
-  filter: blur(2px);
-  pointer-events: none;
-}
-
-/* The scrim is the room's own falloff toward the far left corner. It used to
-   be doing a panel's job; now there is real matter standing in the lower left
-   it only has to keep the wall grid off the type. */
-.mdb-room-scrim {
-  position: absolute; inset: 0;
-  background: radial-gradient(58% 74% at 0% 46%, rgba(5, 5, 7, .86) 0%, rgba(5, 5, 7, .44) 46%, transparent 76%);
-  pointer-events: none;
-}
-
-/* ---------- chrome rails ----------
-   The rails are not separated by a line. They are separated by being on a
-   slightly different plane of light: a top sheen for the head, a floor
-   darkening for the foot. */
-
-.mdb-rail-top,
-.mdb-rail-foot {
-  position: relative;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 var(--gut);
-}
-.mdb-rail-top {
-  height: 54px;
-  background: linear-gradient(180deg, rgba(232, 242, 255, .035), transparent 92%);
-}
-.mdb-rail-foot {
-  height: 56px;
-  background: linear-gradient(0deg, rgba(0, 0, 0, .82) 20%, rgba(0, 0, 0, .4) 62%, transparent 100%);
-}
-.mdb-foot-note { font-size: 12px; color: var(--fg-2); }
-
-.mdb-chip {
-  display: inline-flex; align-items: center; gap: 7px;
-  height: 27px; padding: 0 11px; border-radius: var(--r-sm);
-  font-size: 12px;
-  background: rgba(228, 240, 255, .045);
-  box-shadow: inset 0 1px 0 rgba(228, 240, 255, .10);
-  color: var(--fg-1);
-  transition: background .16s var(--ease-physical), color .16s, box-shadow .2s var(--ease-physical);
-}
-a.mdb-chip:hover { background: rgba(228, 240, 255, .085); color: var(--fg-0); }
-
-/* ============================================================
-   THE BENCH
-
-   Not a hero band with a render beside it. The body is one working column
-   that runs the full height of the room — what Modable is, what it needs,
-   what it will do, and what it has already found on this machine — with the
-   specimen standing on the floor to its right and ruled back to it.
-   ============================================================ */
-
-.mdb-body {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  column-gap: clamp(26px, 3.4vw, 60px);
-  padding: clamp(20px, 3.1vh, 38px) var(--gut) clamp(16px, 2.4vh, 30px);
-  align-items: stretch;
-}
-
-.mdb-col {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: clamp(20px, 4.2vh, 72px);
-  min-width: 0;
-}
-
-.mdb-lede {
-  font-size: clamp(24px, 2.26vw, 33px);
-  margin-bottom: 14px;
-}
-.mdb-sub {
-  font-size: 13px;
-  line-height: 1.62;
-  color: var(--fg-1);
-  max-width: 405px;
-}
-
 /* ---------- SIGNATURE: the key intake ----------
    Not a floating capsule. A slot machined into the room: hard shadow at the
    top of the cut, a lip of light caught on the bottom edge. Depth is doing
    the work a border would otherwise do, and every other focus and fault
    state on this screen speaks the same way. */
-
-.mdb-intake { position: relative; max-width: 472px; }
-
-.mdb-intake-head {
-  display: flex; align-items: baseline; justify-content: space-between;
-  margin-bottom: 10px;
-}
 
 .mdb-slot {
   position: relative;
@@ -841,21 +647,6 @@ a.mdb-chip:hover { background: rgba(228, 240, 255, .085); color: var(--fg-0); }
     0 16px 44px -22px rgba(214, 69, 94, 1),
     0 3px 14px -8px rgba(214, 69, 94, .55);
 }
-
-/* the intake gauge — a LayerEdge stood on end in the slot's left gutter.
-   It fills as the key becomes something Modable can use. */
-.mdb-gauge {
-  display: flex; flex-direction: column-reverse; gap: 2px;
-  width: 3px; flex-shrink: 0;
-}
-.mdb-gauge i {
-  display: block; height: 5px; border-radius: 1px;
-  background: #302c28;
-  transition: background .3s var(--ease-physical), box-shadow .3s;
-}
-.mdb-gauge i.on { background: var(--xenon-dim); }
-.mdb-gauge i.full { background: var(--xenon-mid); box-shadow: 0 0 6px rgba(111, 180, 228, .7); }
-.mdb-gauge i.hot { background: var(--filament); box-shadow: 0 0 6px rgba(255, 180, 84, .8); }
 
 .mdb-key-input {
   flex: 1; min-width: 0;
@@ -898,114 +689,189 @@ a.mdb-chip:hover { background: rgba(228, 240, 255, .085); color: var(--fg-0); }
 .mdb-pill:active:not(:disabled) { transform: translateY(1px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7); }
 .mdb-pill:disabled { opacity: .42; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4); }
 
-/* ---------- what the machine is saying ---------- */
-.mdb-say { height: 32px; padding-top: 10px; }
-.mdb-say-fault { font-size: 12px; line-height: 1.4; color: var(--fault); }
-.mdb-say-ok { font-size: 12px; line-height: 1.4; color: var(--fg-2); }
-
-/* ---------- the operation ladder ----------
-   Four named operations with what each one does, printed on the panel before
-   any of them runs. Not a progress bar: the live operation is underscored by
-   a rule that draws itself once, over that step's exact duration, and hands
-   the baton on. */
-
-.mdb-ladder { list-style: none; margin: 0; padding: 0; }
-.mdb-rung {
-  display: grid;
-  grid-template-columns: 18px 72px minmax(0, 1fr);
-  align-items: baseline;
-  column-gap: 13px;
-  padding: 5px 0;
+/* ---------- the key, once accepted ----------
+   Connecting is the last thing the intake asks for. After it, the slot
+   steps back so the scan below is what the eye follows. */
+.mdb-pill { min-width: 112px; }
+.mdb-pill-face { display: inline-flex; align-items: center; gap: 7px; }
+.mdb-pill.is-busy:disabled,
+.mdb-pill.is-done:disabled { opacity: 1; }
+.mdb-pill.is-busy:disabled {
+  background: linear-gradient(180deg, #e9b874, #d99a45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4), 0 1px 2px rgba(0, 0, 0, .5);
 }
-.mdb-rung-no {
-  font-family: 'Martian Mono', ui-monospace, monospace;
-  font-size: 9px; font-weight: 400;
-  font-variant-numeric: tabular-nums;
-  color: var(--fg-3); opacity: .55;
+.mdb-pill.is-done:disabled {
+  color: var(--filament);
+  background: rgba(255, 180, 84, .08);
+  box-shadow: inset 0 1px 0 rgba(255, 220, 168, .08), inset 0 0 0 1px rgba(255, 180, 84, .16);
 }
-.mdb-rung-name {
+.mdb-pill-pulse {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #2a1a06;
+  animation: onb-breathe .7s ease-in-out infinite;
+}
+
+/* ============================================================
+   FIRST RUN — the ceiling
+
+   One application in a black room, pressed up against an amber beam.
+   The surface is the hero; the copy sits small underneath it, then
+   the key, then one quiet line. The ground is ink-0, the exact colour
+   the home screen opens on, so the handoff has no seam.
+   ============================================================ */
+
+.onb {
   position: relative;
-  display: inline-block;
-  font-family: 'Martian Mono', ui-monospace, monospace;
-  font-size: 9px; font-weight: 400;
-  letter-spacing: .2em; text-transform: uppercase;
-  color: var(--fg-2);
-  padding-bottom: 5px;
-  transition: color .3s var(--ease-physical);
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--ink-0);
 }
-.mdb-rung-note {
-  font-size: 12px; line-height: 1.3;
-  color: #5f574f;
-  transition: color .3s var(--ease-physical);
+.onb-field {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  display: block;
+  z-index: 0;
 }
-.mdb-rung.is-live .mdb-rung-name { color: var(--fg-0); }
-.mdb-rung.is-live .mdb-rung-note { color: var(--fg-1); }
-.mdb-rung.is-done .mdb-rung-name { color: var(--fg-2); }
-.mdb-rung.is-done .mdb-rung-note { color: var(--fg-3); }
-.mdb-rung-draw {
-  position: absolute; left: 0; bottom: 0;
-  width: 100%; height: 1px;
-  transform-origin: 0% 50%;
+/* a falloff at every edge, so the room has no walls */
+.onb-scrim {
+  position: absolute; inset: 0; z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(120% 95% at 50% 46%, transparent 55%, rgba(4, 4, 4, .72) 100%);
 }
-.mdb-rung-struck {
-  position: absolute; left: 0; bottom: 0;
-  width: 100%; height: 1px;
-  background: var(--ink-4);
+/* film, not plastic: a breath of grain over the whole frame */
+.onb-grain {
+  position: absolute; inset: -50%; z-index: 2;
+  pointer-events: none;
+  opacity: .16;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+.onb-drag { position: absolute; top: 0; left: 0; right: 0; height: 44px; z-index: 3; }
+
+.onb-mark {
+  position: absolute; z-index: 4;
+  top: 22px; left: clamp(24px, 3vw, 44px);
+  display: flex; align-items: center; gap: 10px;
 }
 
-/* ---------- the census ----------
-   Modable's first act on any machine is to look. That reading needs no key,
-   so it is already printed here — and it is what turns the lower half of the
-   room from empty floor into the part of the screen that is about you. */
+.onb-hero {
+  position: absolute; left: 0; right: 0; top: 67vh; z-index: 4;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 0 24px;
+  text-align: center;
+  pointer-events: none;
+}
+.onb-hero > * { pointer-events: auto; }
 
-.mdb-census-head {
-  display: flex; align-items: baseline; justify-content: space-between;
-  gap: 18px;
-  padding-bottom: 11px;
+.onb-title {
+  font-family: 'Archivo', -apple-system, sans-serif;
+  font-variation-settings: 'wdth' 100;
+  font-weight: 540;
+  font-size: clamp(25px, min(2.7vw, 4.5vh), 40px);
+  line-height: 1.1;
+  letter-spacing: -0.028em;
+  color: var(--fg-0);
+  text-wrap: balance;
 }
-.mdb-census-sum { color: var(--fg-3); }
-.mdb-census-list { list-style: none; margin: 0; padding: 0; }
+.onb-sub {
+  margin-top: clamp(8px, 1.3vh, 12px);
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--fg-1);
+}
 
-.mdb-census-row {
-  display: grid;
-  grid-template-columns: 4px 94px 76px minmax(0, 1fr);
-  align-items: center;
-  column-gap: 14px;
-  height: 27px;
+.onb-key {
+  width: min(420px, 100%);
+  margin-top: clamp(16px, 3vh, 28px);
+  transition: opacity .5s var(--ease-physical);
 }
-.mdb-census-edge { width: 4px; height: 13px; flex-shrink: 0; }
-.mdb-census-name {
-  font-family: 'Martian Mono', ui-monospace, monospace;
-  font-size: 10px; font-weight: 400;
-  letter-spacing: .12em; text-transform: uppercase;
-  color: var(--fg-2);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  transition: color .35s var(--ease-physical);
+.onb-key[data-seq='scanning'],
+.onb-key[data-seq='ready'],
+.onb-key[data-seq='leaving'] { opacity: .4; }
+.onb-slot { height: 46px; padding-left: 16px; }
+/* focus in the room's own light: a warm lip, never the cold xenon ring */
+.onb .onb-slot:focus-within {
+  box-shadow:
+    inset 0 3px 7px -2px rgba(0, 0, 0, 1),
+    inset 0 1px 0 rgba(0, 0, 0, 1),
+    inset 0 -1px 0 rgba(240, 236, 230, .3),
+    0 1px 0 rgba(255, 246, 234, .05),
+    0 18px 44px -26px rgba(255, 180, 84, .45);
 }
-.mdb-census-ver {
-  font-family: 'Martian Mono', ui-monospace, monospace;
-  font-size: 9px; font-weight: 300;
-  letter-spacing: .04em;
-  font-variant-numeric: tabular-nums;
+.onb .mdb-key-input { caret-color: var(--filament); }
+.onb .mdb-ghost:focus-visible {
+  color: var(--fg-0);
+  background: rgba(240, 236, 230, .06);
+  box-shadow: inset 0 -1px 0 rgba(240, 236, 230, .5);
+}
+.onb .mdb-pill:focus-visible {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .9),
+    0 1px 2px rgba(0, 0, 0, .5),
+    0 0 0 3px rgba(255, 180, 84, .22);
+}
+
+.onb-line {
+  height: 46px;
+  margin-top: 12px;
+  display: flex; justify-content: center;
+}
+.onb-note {
+  font-size: 12px; line-height: 1.5;
   color: var(--fg-3);
 }
-.mdb-census-note {
-  font-family: 'Martian Mono', ui-monospace, monospace;
-  font-size: 9px; font-weight: 400;
-  letter-spacing: .14em; text-transform: uppercase;
-  color: #4a433e;
-  text-align: right;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.mdb-census-row.is-staged .mdb-census-name { color: var(--fg-0); }
-.mdb-census-row.is-staged .mdb-census-note { color: var(--fg-2); }
-.mdb-census-row.is-shut .mdb-census-name { color: var(--fg-3); }
-.mdb-census-row.is-waiting .mdb-census-name { color: #38322e; }
-.mdb-census-row.is-waiting .mdb-census-note { color: #38322e; }
-.mdb-census-void {
-  font-size: 12.5px; line-height: 1.6;
+.onb-fault { color: var(--fault); }
+.onb-link {
+  display: inline-flex; align-items: center; gap: 3px;
+  margin-left: 12px;
   color: var(--fg-2);
-  max-width: 400px;
+  transition: color .16s;
+}
+.onb-link:hover, .onb-link:focus-visible { color: var(--fg-0); }
+
+.onb-status {
+  display: flex; flex-direction: column; align-items: center; gap: 9px;
+}
+.onb-state {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-family: 'Martian Mono', ui-monospace, monospace;
+  font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--fg-1);
+  transition: color .35s var(--ease-physical);
+}
+.onb-state.is-found { color: var(--fg-0); }
+.onb-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--fg-2);
+  animation: onb-breathe 1.1s ease-in-out infinite;
+}
+.onb-state.is-found .onb-dot {
+  background: var(--filament);
+  box-shadow: 0 0 8px rgba(255, 180, 84, .55);
+  animation: none;
+}
+@keyframes onb-breathe { 50% { opacity: .3; } }
+.onb-names {
+  display: flex; align-items: center; flex-wrap: wrap; justify-content: center;
+  min-height: 18px;
+  font-size: 13px; color: var(--fg-2);
+}
+.onb-name { display: inline-flex; align-items: center; }
+.onb-sep {
+  width: 3px; height: 3px; border-radius: 50%;
+  margin: 0 11px;
+  background: var(--fg-3);
+}
+.onb-more { margin-left: 11px; color: var(--fg-3); }
+
+/* the handoff: everything that was about getting in steps back */
+.onb-recede { transition: opacity .34s var(--ease-physical), transform .42s var(--ease-physical); }
+.onb[data-seq='leaving'] .onb-recede { opacity: 0; transform: translateY(-8px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .onb-dot, .mdb-pill-pulse { animation: none !important; }
+  .onb[data-seq='leaving'] .onb-recede { transform: none; }
+  .onb-recede, .onb-key { transition-duration: .2s; }
 }
 
 /* ============================================================
@@ -1018,15 +884,9 @@ a.mdb-chip:hover { background: rgba(228, 240, 255, .085); color: var(--fg-0); }
    reading of the user's actual desktop, not an ornament.
    ============================================================ */
 
-.mdb-specimen {
-  position: relative;
-  align-self: center;
-  justify-self: end;
-}
 .sl-stage { position: relative; perspective: 1150px; perspective-origin: 50% 42%; }
 /* the stage hangs off the right of the specimen box; the rail it is ruled
    back to occupies the rest */
-.mdb-specimen .sl-stage { position: absolute; right: var(--sl-overhang, 0px); top: 0; }
 .sl-rig { position: relative; transform-style: preserve-3d; }
 
 .sl-plane {
@@ -1205,46 +1065,13 @@ a.mdb-chip:hover { background: rgba(228, 240, 255, .085); color: var(--fg-0); }
    and every fault is a lip of light on the bottom edge and a bloom under it,
    because that is what the slot already proved was enough. */
 
-.mdb-onb :focus-visible { outline: none; }
-.mdb-onb .mdb-slot :focus-visible { outline: none; }
-
-.mdb-onb .mdb-chip:focus-visible {
-  background: rgba(228, 240, 255, .085);
-  color: var(--fg-0);
-  box-shadow:
-    inset 0 1px 0 rgba(228, 240, 255, .12),
-    inset 0 -1px 0 rgba(111, 180, 228, .85),
-    0 12px 32px -18px rgba(111, 180, 228, 1);
-}
-.mdb-onb .mdb-ghost:focus-visible {
-  color: var(--fg-0);
-  background: rgba(228, 240, 255, .06);
-  box-shadow:
-    inset 0 -1px 0 rgba(111, 180, 228, .85),
-    0 10px 26px -16px rgba(111, 180, 228, 1);
-}
-.mdb-onb .mdb-pill:focus-visible {
-  filter: brightness(1.08);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .95),
-    inset 0 -2px 0 rgba(15, 62, 96, .55),
-    0 1px 2px rgba(0, 0, 0, .5),
-    0 12px 34px -10px rgba(111, 180, 228, 1);
-}
+.onb :focus-visible { outline: none; }
+.onb .mdb-slot :focus-visible { outline: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  .mdb-slot, .mdb-pill, .mdb-chip, .mdb-ghost,
-  .mdb-rung-name, .mdb-rung-note, .mdb-census-name, .sl-mark, .sl-callout-name {
+  .mdb-slot, .mdb-pill, .mdb-ghost, .sl-mark, .sl-callout-name {
     transition: none;
   }
-}
-
-/* the ladder at rest: one quiet line naming the four operations */
-.mdb-ladder-rest {
-  letter-spacing: .2em;
-  color: var(--fg-3);
-  margin: 0;
-  padding-top: 2px;
 }
 
 /* ============================================================
@@ -1447,51 +1274,6 @@ a.mdb-chip:hover { background: rgba(228, 240, 255, .085); color: var(--fg-0); }
   .mdb-pre.is-clearing .mdb-pre-tile {
     animation: none; opacity: 0; transition: opacity .2s linear;
   }
-}
-
-/* ============================================================
-   THE SURFACE — a real solid, drawn as characters
-
-   The WebGL canvas is never looked at. It renders the lit mesh to
-   a small offscreen target; the grid below is what you see. Colour
-   is carried by the whole grid rather than per character, so a
-   state change costs one class and no per-glyph work.
-   ============================================================ */
-
-.mdb-surf { position: relative; display: inline-block; }
-
-/* present but not shown — a zero-size canvas would stop rendering */
-.mdb-surf-gl {
-  position: absolute; left: 0; top: 0;
-  width: 4px; height: 4px;
-  opacity: 0; pointer-events: none;
-}
-
-.mdb-surf-out {
-  font-family: 'Martian Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-  line-height: 1em;
-  letter-spacing: 0;
-  white-space: pre;
-  margin: 0;
-  user-select: none;
-  color: var(--fg-1);
-  text-shadow: 0 0 14px rgba(255, 246, 235, .1);
-  transition: color .6s var(--ease-physical), text-shadow .6s var(--ease-physical);
-}
-
-/* cold while it is being read, warm only once a layer has landed */
-.mdb-surf[data-state='connecting'] .mdb-surf-out,
-.mdb-surf[data-state='inspecting'] .mdb-surf-out {
-  color: var(--xenon);
-  text-shadow: 0 0 18px rgba(111, 180, 228, .28);
-}
-.mdb-surf[data-state='rewriting'] .mdb-surf-out {
-  color: var(--filament-hot);
-  text-shadow: 0 0 20px rgba(255, 180, 84, .3);
-}
-.mdb-surf[data-state='success'] .mdb-surf-out {
-  color: var(--filament);
-  text-shadow: 0 0 18px rgba(255, 180, 84, .26);
 }
 
 /* ============================================================

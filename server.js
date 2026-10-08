@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const WebSocket = require('ws');
 const { pickTarget, isVisiblePage } = require('./lib/pickTarget');
-const { verdict, revertScript } = require('./lib/verify');
+const { verdict, revertScript, MARKS_PROBE } = require('./lib/verify');
 const spicetify = require('./lib/spicetify');
 const localImport = require('./lib/localImport');
 const { createHandoff } = require('./lib/handoff');
@@ -359,7 +359,9 @@ app.post('/api/inject', async (req, res) => {
  * revertScript for exactly what it does and does not undo.
  */
 app.post('/api/revert', async (req, res) => {
-  const { targetId, marks } = req.body || {};
+  // all: true is the only way to remove every Modable layer at once; nothing
+  // in the normal flow sends it.
+  const { targetId, marks, all } = req.body || {};
 
   try {
     const { target, error } = await resolveTarget(targetId);
@@ -367,7 +369,7 @@ app.post('/api/revert', async (req, res) => {
     // a failure worth reporting on top of whatever went wrong first.
     if (!target) return res.json({ success: true, reverted: false, note: error });
 
-    const out = await cdpEvaluate(target.webSocketDebuggerUrl, revertScript(marks));
+    const out = await cdpEvaluate(target.webSocketDebuggerUrl, revertScript(marks, { all: all === true }));
     if (!out.success) return res.json({ success: false, error: out.error });
 
     const r = out.result || { removed: 0, stripped: [], remaining: 0 };
@@ -657,15 +659,7 @@ function surfaceProbe() {
 
 const SURFACE_PROBE = `(${surfaceProbe.toString()})()`;
 
-/** Every data-modable value currently on the page, for before/after comparison. */
-const MARKS_PROBE = `(function(){
-  var nodes = document.querySelectorAll('[data-modable]');
-  var names = [];
-  for (var i = 0; i < nodes.length; i++) {
-    names.push(nodes[i].getAttribute('data-modable') || '?');
-  }
-  return { count: nodes.length, names: names };
-})()`;
+// MARKS_PROBE (lib/verify.js): every data-modable value on the page and which layer owns it.
 
 // ---------------------------------------------------------------------------
 // The model

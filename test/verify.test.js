@@ -65,17 +65,17 @@ describe('revertScript', () => {
     // The selector is built inside the page from this list.
     const src = revertScript(['clock', 'theme-invert']);
     expect(src).toContain('["clock","theme-invert"]');
-    expect(src).toContain("'[data-modable=\"' + m + '\"]'");
+    // ...and never a node a generated layer owns under the same mark name.
+    expect(src).toContain(':not([data-modable-layer])');
   });
 
-  it('falls back to every Modable node when the layer named none', () => {
-    const src = revertScript([]);
-    expect(src).toContain('var wanted = [];');
-    expect(src).toContain("'[data-modable]'");
+  it('removes nothing when the layer named none — every node only on an explicit remove-all', () => {
+    expect(revertScript([])).toContain('var all = false;');
+    expect(revertScript([], { all: true })).toContain('var all = true;');
   });
 
-  it('strips modable- classes so a failed theme layer cannot strand the app', () => {
-    expect(revertScript(['theme-invert'])).toContain("indexOf('modable-') === 0");
+  it('strips modable- classes only on an explicit remove-all (a generated layer removes its own)', () => {
+    expect(revertScript([], { all: true })).toContain("indexOf('modable-') === 0");
   });
 
   it('is syntactically valid JavaScript', () => {
@@ -104,7 +104,22 @@ describe('revertScript — teardown hooks', () => {
     expect(r.out.tornDown).toEqual(['notion-spatial']);
   });
 
-  it('runs every hook when no marks were claimed', () => {
-    expect(run([], ['a', 'b']).calls).toEqual(['a', 'b']);
+  it('runs no hook when no marks were claimed — every hook only on an explicit remove-all', () => {
+    expect(run([], ['a', 'b']).calls).toEqual([]);
+    const all = new Function('window', 'document', 'return ' + revertScript([], { all: true }))(
+      { __modableTeardown: { a: () => {}, b: () => {} } },
+      { querySelectorAll: () => [], documentElement: { classList: [] } },
+    );
+    expect(all.tornDown).toEqual(['a', 'b']);
+  });
+
+  it('matches a hook key on a word boundary, so "notion" never tears down "notion-spatial"', () => {
+    const r = run(['notion-spatial-toggle'], ['notion', 'notion-spatial']);
+    expect(r.calls).toEqual(['notion-spatial']);
+  });
+
+  it("undoes a generated layer by its own id, never another layer's hook", () => {
+    const r = run(['clock', 'modable-layer:gen-clock'], ['gen-clock', 'gen-clock-face', 'notion-spatial']);
+    expect(r.calls).toEqual(['gen-clock']);
   });
 });

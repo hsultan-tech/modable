@@ -4,6 +4,7 @@ import { extractCode, parseMod, ModKind } from './parseMod'
 import { usesSpicetify, taskFor, extractAudioPath } from './routing'
 import { flagshipFor, isFlagshipCode } from './flagship'
 import { routeCapability } from './capabilities'
+import { ownLayer, layerIdFor, ownedLayerId, unwrapOwned } from './layerOwnership'
 import { useAppStore } from '../stores/projectStore'
 
 const SYSTEM_PROMPT = `You are Modable. You write JavaScript that is evaluated inside a desktop
@@ -17,14 +18,21 @@ invent a selector, and never assume one application's markup applies to another.
 
 ## Hard rules
 1. Emit exactly one self-executing function: (function(){ ... })();
-2. The first statement is always:
-   document.querySelectorAll('[data-modable]').forEach(function(el){ el.remove(); });
-   This makes every layer re-runnable and replaces the previous version of itself.
+2. Your layer is one of several that may be running in this application at once —
+   other Modable layers you did not write may already be on the page. Never remove,
+   query or change any element you did not create in this run. Never write
+   document.querySelectorAll('[data-modable]') or any cleanup of Modable elements:
+   Modable gives your layer an id from its NAME and removes your previous copy (and
+   only yours) before your code runs.
 3. Tag everything you add with data-modable naming the feature — elements AND any
    <style> tag you create:
    el.setAttribute('data-modable', 'dark-mode');
    Anything left untagged can never be removed or replaced. This is also how Modable
    verifies the layer took hold, so a layer that adds no tagged node counts as failed.
+   Modable marks every tagged node as owned by your layer.
+3b. Listeners on document or window, observers and timers: register their cleanup with
+   modable.onTeardown(function(){ ... }) — a variable Modable provides to your code.
+   Never assign window.__modableTeardown or any other layer's globals.
 4. Never throw. Guard every lookup. If your preferred anchor is missing, fall back down
    the ladder below — never return early leaving nothing on screen.
 5. Never reload or navigate the application, and never call the network.
@@ -84,7 +92,6 @@ DESCRIPTION: One sentence saying what the user gets
 
 \`\`\`javascript
 (function(){
-  document.querySelectorAll('[data-modable]').forEach(function(el){ el.remove(); });
   // ...
 })();
 \`\`\`
@@ -94,7 +101,9 @@ so formatting matters.
 
 ## Refinements
 A follow-up message usually refines the layer you just wrote. Start from that code and
-change what was asked, keeping everything else identical.`
+change what was asked, keeping everything else identical — including the NAME line,
+exactly, because the NAME is how Modable knows it replaces that layer. A request for a
+different modification gets a different NAME, and the earlier layer stays as it is.`
 
 /**
  * Spotify's prompt.
@@ -223,6 +232,17 @@ DESCRIPTION: One sentence saying what the user gets
 A follow-up message usually refines the modification you just wrote. Start from that
 code and change what was asked, keeping everything else identical and the KIND the
 same unless the request genuinely demands the other one.`
+
+/**
+ * A generated CDP layer, wrapped so it owns only itself (layerOwnership.ts).
+ * Flagships already scope themselves and are left exactly as written. A repair
+ * passes the failed layer's id so it replaces that layer and nothing else.
+ */
+function owned<T extends { name: string; code: string; marks: string[] }>(mod: T, id?: string): T {
+  if (isFlagshipCode(mod.code)) return mod
+  const out = ownLayer(mod.code, id || layerIdFor(mod.name), mod.marks)
+  return { ...mod, code: out.code, marks: out.marks }
+}
 
 /** Which fence the reply is written in — decided by the model's KIND line, and
  *  falling back to whichever fence actually arrived if it omitted one. */
@@ -507,7 +527,7 @@ export function useModAgent() {
       } else if (msg.role === 'assistant' && msg.modPreview) {
         history.push({
           role: 'assistant',
-          content: `Previous layer "${msg.modPreview.name}":\n\`\`\`javascript\n${msg.modPreview.code}\n\`\`\``,
+          content: `Previous layer "${msg.modPreview.name}":\n\`\`\`javascript\n${unwrapOwned(msg.modPreview.code)}\n\`\`\``,
         })
       }
     }
@@ -515,7 +535,8 @@ export function useModAgent() {
     try {
       const { content, targetId } = await run(userMessage, history)
       const channel = usesSpicetify(selectedApp.name) ? 'spicetify' : 'cdp'
-      const mod = parseMod(content, channel === 'spicetify' ? kindOf(content) : 'js')
+      const parsed = parseMod(content, channel === 'spicetify' ? kindOf(content) : 'js')
+      const mod = parsed && channel === 'cdp' ? owned(parsed) : parsed
 
       if (mod) {
         setDraftCode(mod.code)
@@ -563,7 +584,7 @@ export function useModAgent() {
 
     const history: ChatMessage[] = [{
       role: 'assistant',
-      content: `Layer "${failed.name}":\n\`\`\`javascript\n${failed.code}\n\`\`\``,
+      content: `Layer "${failed.name}":\n\`\`\`javascript\n${unwrapOwned(failed.code)}\n\`\`\``,
     }]
 
     try {
@@ -576,7 +597,9 @@ export function useModAgent() {
         failed.targetId,
       )
 
-      const mod = parseMod(content)
+      const parsed = parseMod(content)
+      // Same layer id as the one that failed: the repair replaces it, and only it.
+      const mod = parsed && owned(parsed, ownedLayerId(failed.code) || layerIdFor(failed.name))
       if (mod) {
         const repaired = { ...mod, targetId }
         setDraftCode(mod.code)
